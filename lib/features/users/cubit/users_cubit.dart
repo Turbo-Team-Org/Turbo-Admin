@@ -1,0 +1,89 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
+import 'package:core/core.dart'; // For User model, UserRepository, UserService
+
+// --- Users States ---
+abstract class UsersState {}
+
+class UsersInitial extends UsersState {}
+
+class UsersLoading extends UsersState {}
+
+class UsersLoaded extends UsersState {
+  final List<User> users;
+  final int totalCount; // For pagination
+  final int currentPage; // For pagination
+
+  UsersLoaded({
+    required this.users,
+    required this.totalCount,
+    required this.currentPage,
+  });
+}
+
+class UsersError extends UsersState {
+  final String message;
+  UsersError(this.message);
+}
+
+// --- Users Cubit ---
+class UsersCubit extends Cubit<UsersState> {
+  final UserRepository _userRepository;
+  final UserService _userService; // For actions like changing role, status, or deleting
+
+  UsersCubit({
+    UserRepository? userRepository,
+    UserService? userService,
+  }) : _userRepository = userRepository ?? GetIt.instance<UserRepository>(),
+       _userService = userService ?? GetIt.instance<UserService>(),
+       super(UsersInitial());
+
+  Future<void> loadUsers({
+    int page = 1, 
+    int limit = 20, 
+    String? role, // Example filter: user role
+    bool? isActive, // Example filter: user status
+  }) async {
+    emit(UsersLoading());
+    try {
+      // Assuming UserRepository.getUsers() supports pagination and filtering
+      final PagedResult<User> pagedResult = await _userRepository.getUsers(
+        page: page, 
+        limit: limit,
+        role: role,
+        isActive: isActive,
+      );
+
+      emit(UsersLoaded(
+        users: pagedResult.items,
+        totalCount: pagedResult.totalCount,
+        currentPage: pagedResult.currentPage,
+      ));
+    } catch (e) {
+      emit(UsersError(e.toString()));
+    }
+  }
+
+  Future<void> deleteUser(String userId) async {
+    try {
+      await _userService.deleteUser(userId);
+      // Refresh the list. Consider current filters and page.
+      // For simplicity, calling loadUsers() which might reset.
+      await loadUsers(); 
+    } catch (e) {
+      emit(UsersError('Error al eliminar usuario: ${e.toString()}'));
+      // Optionally re-emit current data if state was UsersLoaded
+    }
+  }
+  
+  // Example: Method to change user status (ban/unban or activate/deactivate)
+  Future<void> updateUserStatus(String userId, bool newStatus) async {
+    try {
+        // Assuming UserService has a method like this
+        await _userService.updateUserStatus(userId, newStatus); 
+        await loadUsers(); // Refresh to show updated status
+    } catch (e) {
+        emit(UsersError('Error al actualizar estado del usuario: ${e.toString()}'));
+    }
+  }
+}
