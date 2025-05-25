@@ -2,7 +2,14 @@ import 'package:get_it/get_it.dart';
 import 'package:turbo_admin/features/dashboard/cubit/dashboard_cubit.dart';
 import 'package:turbo_admin/features/places/cubit/place_form_cubit.dart';
 import 'package:turbo_admin/features/places/cubit/places_cubit.dart';
-// Import other Cubits as they are created in Phase 2
+import 'package:turbo_admin/features/events/cubit/events_cubit.dart';
+import 'package:turbo_admin/features/events/cubit/event_form_cubit.dart';
+import 'package:turbo_admin/features/reviews/cubit/reviews_cubit.dart';
+import 'package:turbo_admin/features/reviews/cubit/review_moderation_cubit.dart';
+import 'package:turbo_admin/features/categories/cubit/categories_cubit.dart';
+import 'package:turbo_admin/features/categories/cubit/category_form_cubit.dart';
+import 'package:turbo_admin/features/users/cubit/users_cubit.dart';
+import 'package:turbo_admin/features/users/cubit/user_management_cubit.dart';
 
 // Use the global GetIt instance from main.dart, or re-declare if preferred for this scope
 // For consistency with potential GetIt usage in core, it's often good to use a shared instance.
@@ -17,6 +24,7 @@ Future<void> initUIDependencies() async {
   // These are typically registered as factories because they might be created
   // multiple times or have state that shouldn't persist globally like a singleton.
   
+  // Phase 1 Cubits
   di.registerFactory(() => DashboardCubit(
       // Repositories are expected to be already registered in GetIt by initCoreDependencies()
       // GetIt will resolve them automatically when DashboardCubit is created.
@@ -30,8 +38,13 @@ Future<void> initUIDependencies() async {
       // CategoryRepository, PlaceRepository, PlaceService expected from core's DI.
       ));
 
-  // Example for future Cubits (Phase 2):
-  // di.registerFactory(() => EventsCubit());
-  // di.registerFactory(() => EventFormCubit());
-  // ... and so on for Reviews, Categories, Users
+  // Phase 2 Cubits
+  di.registerFactory(() => EventsCubit());
+  di.registerFactory(() => EventFormCubit());
+  di.registerFactory(() => ReviewsCubit());
+  di.registerFactory(() => ReviewModerationCubit());
+  di.registerFactory(() => CategoriesCubit());
+  di.registerFactory(() => CategoryFormCubit());
+  di.registerFactory(() => UsersCubit());
+  di.registerFactory(() => UserManagementCubit());
 }

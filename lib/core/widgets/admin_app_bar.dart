@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart'; // For potential breadcrumb logic
 
 class AdminAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final String title;
+  final String title; // This might be derived from the route or passed explicitly
   final List<Widget>? actions;
 
   const AdminAppBar({
@@ -12,19 +13,20 @@ class AdminAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Using a standard AppBar for consistency
+    // Example of how you might get current route path for breadcrumbs (simplified)
+    // final String currentPath = GoRouterState.of(context).uri.toString();
+    // You would need a utility to parse this path into breadcrumb segments.
+
     return AppBar(
-      // If this AppBar is used in a context where a leading back button is automatically added, 
-      // and you don't want it (e.g. main sections), set automaticallyImplyLeading to false.
-      automaticallyImplyLeading: false, 
-      title: Text(title),
+      automaticallyImplyLeading: false, // Usually false if sidebar is present
+      title: Text(title), // Title is passed from AdminScaffold
+      // leading: Text("Breadcrumbs: $currentPath"), // Placeholder for breadcrumbs
       actions: actions,
-      // Example of adding some style
       backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
       elevation: 1,
     );
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight); // Standard AppBar height
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }
