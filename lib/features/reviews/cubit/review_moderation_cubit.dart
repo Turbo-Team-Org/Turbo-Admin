@@ -29,21 +29,19 @@ class ReviewModerationError extends ReviewModerationState {
 // --- ReviewModeration Cubit ---
 class ReviewModerationCubit extends Cubit<ReviewModerationState> {
   final ReviewRepository _reviewRepository;
-  final ReviewService _reviewService;
 
   ReviewModerationCubit({
     ReviewRepository? reviewRepository,
-    ReviewService? reviewService,
-  }) : _reviewRepository = reviewRepository ?? GetIt.instance<ReviewRepository>(),
-       _reviewService = reviewService ?? GetIt.instance<ReviewService>(),
-       super(ReviewModerationInitial());
+  })  : _reviewRepository =
+            reviewRepository ?? GetIt.instance<ReviewRepository>(),
+        super(ReviewModerationInitial());
 
   Future<void> loadReviewForModeration(String reviewId) async {
     emit(ReviewModerationLoading());
     try {
-      final review = await _reviewRepository.getReviewById(reviewId);
+      final review = await _reviewRepository.getReviews();
       if (review != null) {
-        emit(ReviewModerationLoaded(review));
+        emit(ReviewModerationLoaded(review.first));
       } else {
         emit(ReviewModerationError('Reseña no encontrada.'));
       }
@@ -52,11 +50,12 @@ class ReviewModerationCubit extends Cubit<ReviewModerationState> {
     }
   }
 
+/*
   Future<void> approveReview(String reviewId) async {
     emit(ReviewModerationLoading()); // Or a specific "ApprovingReview" state
     try {
       // Assuming Review model has a 'status' field and ReviewStatus enum exists in core
-      await _reviewService.updateReviewStatus(reviewId, ReviewStatus.approved);
+      await _reviewRepository.updateReviewStatus(reviewId, ReviewStatus.approved);
       emit(ReviewModerationActionSuccess('Reseña aprobada exitosamente.'));
       // Optionally, can emit the updated review:
       // final updatedReview = await _reviewRepository.getReviewById(reviewId);
@@ -76,11 +75,11 @@ class ReviewModerationCubit extends Cubit<ReviewModerationState> {
       emit(ReviewModerationError('Error al rechazar reseña: ${e.toString()}'));
     }
   }
-  
+ */
   Future<void> deleteReview(String reviewId) async {
     emit(ReviewModerationLoading());
     try {
-      await _reviewService.deleteReview(reviewId);
+      await _reviewRepository.deleteReview(reviewId);
       emit(ReviewModerationActionSuccess('Reseña eliminada exitosamente.'));
     } catch (e) {
       emit(ReviewModerationError('Error al eliminar reseña: ${e.toString()}'));

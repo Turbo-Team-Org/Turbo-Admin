@@ -46,15 +46,22 @@ class PlacesDataTable extends StatelessWidget {
     return DataTable2(
       columnSpacing: 12,
       horizontalMargin: 12,
-      minWidth: 800, // Minimum width for the table to ensure all columns are visible
+      minWidth:
+          800, // Minimum width for the table to ensure all columns are visible
       sortAscending: true, // Default sort order
       // sortColumnIndex: _sortColumnIndex, // Add stateful logic for sorting if needed
       columns: const [
         DataColumn2(label: Text('Nombre'), size: ColumnSize.L),
         DataColumn2(label: Text('Categoría'), size: ColumnSize.M),
-        DataColumn2(label: Text('Rating'), numeric: true, size: ColumnSize.S), // numeric for alignment
+        DataColumn2(
+            label: Text('Rating'),
+            numeric: true,
+            size: ColumnSize.S), // numeric for alignment
         DataColumn2(label: Text('Estado'), size: ColumnSize.S),
-        DataColumn2(label: Text('Acciones'), size: ColumnSize.M, fixedWidth: 120), // Fixed width for actions
+        DataColumn2(
+            label: Text('Acciones'),
+            size: ColumnSize.M,
+            fixedWidth: 120), // Fixed width for actions
       ],
       rows: places.map((place) {
         // Assuming Place model has these fields:
@@ -73,22 +80,29 @@ class PlacesDataTable extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     // Handle potential errors with NetworkImage, e.g., show placeholder
-                    backgroundImage: place.mainImage.isNotEmpty 
-                                     ? NetworkImage(place.mainImage) 
-                                     : null, // Or a placeholder AssetImage
+                    backgroundImage: place.mainImage.isNotEmpty
+                        ? NetworkImage(place.mainImage)
+                        : null, // Or a placeholder AssetImage
                     radius: 16,
-                    child: place.mainImage.isEmpty 
-                           ? const Icon(Icons.business, size: 16) // Placeholder icon
-                           : null,
+                    child: place.mainImage.isEmpty
+                        ? const Icon(Icons.business,
+                            size: 16) // Placeholder icon
+                        : null,
                   ),
                   const SizedBox(width: 8),
-                  Expanded( // Use Expanded to prevent overflow if names are long
+                  Expanded(
+                    // Use Expanded to prevent overflow if names are long
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(place.name, style: const TextStyle(fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
-                        Text(place.address, style: TextStyle(color: Colors.grey[600], fontSize: 12), overflow: TextOverflow.ellipsis),
+                        Text(place.name,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                            overflow: TextOverflow.ellipsis),
+                        Text(place.address,
+                            style: TextStyle(
+                                color: Colors.grey[600], fontSize: 12),
+                            overflow: TextOverflow.ellipsis),
                       ],
                     ),
                   ),
@@ -97,7 +111,8 @@ class PlacesDataTable extends StatelessWidget {
             ),
             DataCell(
               Chip(
-                label: Text(place.categoryName), // Assuming categoryName is directly available
+                label: Text(place
+                    .categoryName), // Assuming categoryName is directly available
                 backgroundColor: Colors.blue.withOpacity(0.1),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               ),
@@ -115,10 +130,14 @@ class PlacesDataTable extends StatelessWidget {
             DataCell(
               Chip(
                 label: Text(place.isOpen ? 'Abierto' : 'Cerrado'),
-                backgroundColor: place.isOpen ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
-                labelStyle: TextStyle(color: place.isOpen ? Colors.green.shade700 : Colors.red.shade700),
+                backgroundColor: place.isOpen
+                    ? Colors.green.withOpacity(0.1)
+                    : Colors.red.withOpacity(0.1),
+                labelStyle: TextStyle(
+                    color: place.isOpen
+                        ? Colors.green.shade700
+                        : Colors.red.shade700),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-
               ),
             ),
             DataCell(
@@ -131,9 +150,11 @@ class PlacesDataTable extends StatelessWidget {
                     onPressed: onEdit != null ? () => onEdit!(place.id) : null,
                   ),
                   IconButton(
-                    icon: const Icon(Icons.delete_outline, size: 20, color: Colors.redAccent),
+                    icon: const Icon(Icons.delete_outline,
+                        size: 20, color: Colors.redAccent),
                     tooltip: 'Delete Place',
-                    onPressed: onDelete != null ? () => onDelete!(place.id) : null,
+                    onPressed:
+                        onDelete != null ? () => onDelete!(place.id) : null,
                   ),
                 ],
               ),
@@ -142,7 +163,7 @@ class PlacesDataTable extends StatelessWidget {
         );
       }).toList(),
       // Optional: Add footer with pagination controls if using Paginator controller from data_table_2
-      // bottomPaginator: PaginatorController(), 
+      // bottomPaginator: PaginatorController(),
       // Paginator can be configured with PaginatorController to handle page changes.
       // This would typically interact with the PlacesCubit to load paged data.
     );

@@ -10,7 +10,7 @@ class UsersInitial extends UsersState {}
 class UsersLoading extends UsersState {}
 
 class UsersLoaded extends UsersState {
-  final List<User> users;
+  final List<AuthUser> users;
   final int totalCount; // For pagination
   final int currentPage; // For pagination
 
@@ -28,16 +28,14 @@ class UsersError extends UsersState {
 
 // --- Users Cubit ---
 class UsersCubit extends Cubit<UsersState> {
-  final UserRepository _userRepository;
-  final UserService _userService; // For actions like changing role, status, or deleting
+  final AuthenticationRepository _userRepository;
 
   UsersCubit({
-    UserRepository? userRepository,
-    UserService? userService,
-  }) : _userRepository = userRepository ?? GetIt.instance<UserRepository>(),
-       _userService = userService ?? GetIt.instance<UserService>(),
-       super(UsersInitial());
-
+    AuthenticationRepository? userRepository,
+  })  : _userRepository =
+            userRepository ?? GetIt.instance<AuthenticationRepository>(),
+        super(UsersInitial());
+/*
   Future<void> loadUsers({
     int page = 1, 
     int limit = 20, 
@@ -47,7 +45,7 @@ class UsersCubit extends Cubit<UsersState> {
     emit(UsersLoading());
     try {
       // Assuming UserRepository.getUsers() supports pagination and filtering
-      final PagedResult<User> pagedResult = await _userRepository.getUsers(
+      final PagedResult<AuthUser> pagedResult = await _userRepository.getAllUsers(
         page: page, 
         limit: limit,
         role: role,
@@ -86,4 +84,5 @@ class UsersCubit extends Cubit<UsersState> {
         emit(UsersError('Error al actualizar estado del usuario: ${e.toString()}'));
     }
   }
+  */
 }

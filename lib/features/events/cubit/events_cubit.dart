@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:core/core.dart'; // For Event model, EventRepository, EventService
@@ -29,32 +31,32 @@ class EventsError extends EventsState {
 // --- Events Cubit ---
 class EventsCubit extends Cubit<EventsState> {
   final EventRepository _eventRepository;
-  final EventService _eventService;
 
   EventsCubit({
     EventRepository? eventRepository,
-    EventService? eventService,
-  }) : _eventRepository = eventRepository ?? GetIt.instance<EventRepository>(),
-       _eventService = eventService ?? GetIt.instance<EventService>(),
-       super(EventsInitial());
+  })  : _eventRepository = eventRepository ?? GetIt.instance<EventRepository>(),
+        super(EventsInitial());
 
-  Future<void> loadEvents({int page = 1, String? placeId, DateTime? date}) async {
+  Future<void> loadEvents(
+      {int page = 1, String? placeId, DateTime? date}) async {
     emit(EventsLoading());
     try {
       // Assuming EventRepository has methods like getEvents, getEventsByPlace, getEventsByDate
       // This is a simplified example; actual filtering logic might be more complex
       List<Event> events;
       if (placeId != null && placeId.isNotEmpty) {
-        events = await _eventRepository.getEventsByPlace(placeId);
+        events = await _eventRepository.getEventsByPlaceId(placeId);
       } else if (date != null) {
-        events = await _eventRepository.getEventsByDate(date);
+        events = await _eventRepository.getEventsByDateRange(
+            startDate: date, endDate: DateTime.now());
       } else {
         events = await _eventRepository.getEvents(); // Gets all or a page
       }
-      
+
       emit(EventsLoaded(
         events: events,
-        totalCount: events.length, // Replace with actual total count if paginated
+        totalCount:
+            events.length, // Replace with actual total count if paginated
         currentPage: page,
       ));
     } catch (e) {
@@ -64,7 +66,7 @@ class EventsCubit extends Cubit<EventsState> {
 
   Future<void> deleteEvent(String eventId) async {
     try {
-      await _eventService.deleteEvent(eventId);
+      await _eventRepository.deleteEvent(eventId);
       await loadEvents(); // Reload events after deletion
     } catch (e) {
       // If the current state is EventsLoaded, we might want to emit an error but keep the data
@@ -72,8 +74,12 @@ class EventsCubit extends Cubit<EventsState> {
         final currentEvents = (state as EventsLoaded).events;
         final totalCount = (state as EventsLoaded).totalCount;
         final currentPage = (state as EventsLoaded).currentPage;
-        emit(EventsError('Error al eliminar evento: ${e.toString()}')); // Show error
-        emit(EventsLoaded(events: currentEvents, totalCount: totalCount, currentPage: currentPage)); // Re-emit current data
+        emit(EventsError(
+            'Error al eliminar evento: ${e.toString()}')); // Show error
+        emit(EventsLoaded(
+            events: currentEvents,
+            totalCount: totalCount,
+            currentPage: currentPage)); // Re-emit current data
       } else {
         emit(EventsError('Error al eliminar evento: ${e.toString()}'));
       }

@@ -11,7 +11,7 @@ class UserManagementLoading extends UserManagementState {}
 
 // State when a user's data is loaded for management/editing
 class UserManagementLoaded extends UserManagementState {
-  final User user;
+  final AuthUser user;
   // final List<Role> availableRoles; // If roles are dynamic and selectable
 
   UserManagementLoaded({
@@ -33,25 +33,26 @@ class UserManagementError extends UserManagementState {
 
 // --- UserManagement Cubit ---
 class UserManagementCubit extends Cubit<UserManagementState> {
-  final UserRepository _userRepository;
-  final UserService _userService;
+  final AuthenticationRepository _userRepository;
+
   // final RoleRepository _roleRepository; // If roles are fetched from a repository
 
   UserManagementCubit({
-    UserRepository? userRepository,
-    UserService? userService,
+    AuthenticationRepository? userRepository,
+
     // RoleRepository? roleRepository,
-  }) : _userRepository = userRepository ?? GetIt.instance<UserRepository>(),
-       _userService = userService ?? GetIt.instance<UserService>(),
-       // _roleRepository = roleRepository ?? GetIt.instance<RoleRepository>(),
-       super(UserManagementInitial());
+  })  : _userRepository =
+            userRepository ?? GetIt.instance<AuthenticationRepository>(),
+
+        // _roleRepository = roleRepository ?? GetIt.instance<RoleRepository>(),
+        super(UserManagementInitial());
 
   Future<void> loadUserForManagement(String userId) async {
     emit(UserManagementLoading());
     try {
-      final user = await _userRepository.getUserById(userId);
+      final user = await _userRepository.getCurrentUser();
       // final availableRoles = await _roleRepository.getRoles(); // Example
-      
+
       if (user != null) {
         emit(UserManagementLoaded(
           user: user,
@@ -64,7 +65,7 @@ class UserManagementCubit extends Cubit<UserManagementState> {
       emit(UserManagementError(e.toString()));
     }
   }
-
+/*
   Future<void> updateUserProfile(String userId, UserProfileUpdateData data) async {
     // UserProfileUpdateData would be a simple class/record holding fields that can be updated
     // e.g., name, email (if changeable), custom profile fields.
@@ -101,6 +102,7 @@ class UserManagementCubit extends Cubit<UserManagementState> {
       emit(UserManagementError('Error al actualizar estado: ${e.toString()}'));
     }
   }
+  */
 }
 
 // Example Data Transfer Object for profile updates (not from core)

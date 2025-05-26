@@ -13,7 +13,7 @@ class PlaceholderUsersListPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => GetIt.instance<UsersCubit>()..loadUsers(),
+      create: (context) => GetIt.instance<UsersCubit>(),
       child: AdminScaffold(
         title: 'Usuarios',
         // No FAB for user creation typically
@@ -24,23 +24,40 @@ class PlaceholderUsersListPage extends StatelessWidget {
             }
             if (state is UsersLoaded) {
               return UsersDataTable(
-                users: state.users,
-                onEdit: (userId) => context.goNamed('manageUser', pathParameters: {'userId': userId}),
-                onDelete: (userId) {
-                    showDialog(context: context, builder: (_) => AlertDialog(
-                        title: const Text("Confirmar Eliminación"),
-                        content: const Text("¿Seguro que quieres eliminar este usuario? Esta acción puede ser irreversible."),
-                        actions: [ TextButton(onPressed: ()=>Navigator.pop(context), child: const Text("Cancelar")), TextButton(onPressed: (){ context.read<UsersCubit>().deleteUser(userId); Navigator.pop(context);}, child: Text("Eliminar", style: TextStyle(color: Colors.red))) ],
-                    ));
-                },
-                onUpdateStatus: (userId, newStatus) {
-                  context.read<UsersCubit>().updateUserStatus(userId, newStatus);
-                },
-                onRefresh: () => context.read<UsersCubit>().loadUsers(),
-                // onUpdateRole: (userId, newRole) { // If direct role change from table is needed
-                //   context.read<UsersCubit>().updateUserRole(userId, newRole);
-                // },
-              );
+                  users: state.users,
+                  onEdit: (userId) => context.goNamed('manageUser',
+                      pathParameters: {'userId': userId}),
+                  onDelete: (userId) {
+                    showDialog(
+                        context: context,
+                        builder: (_) => AlertDialog(
+                              title: const Text("Confirmar Eliminación"),
+                              content: const Text(
+                                  "¿Seguro que quieres eliminar este usuario? Esta acción puede ser irreversible."),
+                              actions: [
+                                TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: const Text("Cancelar")),
+                                TextButton(
+                                    onPressed: () {
+                                      //        context
+                                      //             .read<UsersCubit>()
+                                      //             .deleteUser(userId);
+                                      //         Navigator.pop(context);
+                                    },
+                                    child: Text("Eliminar",
+                                        style: TextStyle(color: Colors.red)))
+                              ],
+                            ));
+                  },
+                  onUpdateStatus: (userId, newStatus) {
+                    //         context.read<UsersCubit>().updateUserStatus(userId, newStatus);
+                  },
+                  onRefresh: () => {} // context.read<UsersCubit>().loadUsers(),
+                  // onUpdateRole: (userId, newRole) { // If direct role change from table is needed
+                  //   context.read<UsersCubit>().updateUserRole(userId, newRole);
+                  // },
+                  );
             }
             if (state is UsersError) {
               return Center(child: Text('Error: ${state.message}'));

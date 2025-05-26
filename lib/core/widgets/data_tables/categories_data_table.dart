@@ -50,7 +50,8 @@ class CategoriesDataTable extends StatelessWidget {
         DataColumn2(label: Text('Descripción'), size: ColumnSize.M),
         // DataColumn2(label: Text('Parent ID'), size: ColumnSize.S), // If showing parent category
         DataColumn2(label: Text('Slug'), size: ColumnSize.M),
-        DataColumn2(label: Text('Acciones'), size: ColumnSize.S, fixedWidth: 120),
+        DataColumn2(
+            label: Text('Acciones'), size: ColumnSize.S, fixedWidth: 120),
       ],
       rows: categories.map((category) {
         // Assuming Category model has fields like:
@@ -63,12 +64,14 @@ class CategoriesDataTable extends StatelessWidget {
 
         return DataRow2(
           cells: [
-             DataCell(
-              category.iconUrl != null && category.iconUrl!.isNotEmpty
+            DataCell(
+              category.icon != null && category.icon.isNotEmpty
                   ? CircleAvatar(
-                      backgroundImage: NetworkImage(category.iconUrl!),
+                      backgroundImage: NetworkImage(category.icon),
                       radius: 16,
-                      child: category.iconUrl!.isEmpty ? const Icon(Icons.category_outlined, size: 16) : null,
+                      child: category.icon.isEmpty
+                          ? const Icon(Icons.category_outlined, size: 16)
+                          : null,
                     )
                   : const CircleAvatar(
                       radius: 16,
@@ -76,11 +79,15 @@ class CategoriesDataTable extends StatelessWidget {
                     ),
             ),
             DataCell(
-              Text(category.name, style: const TextStyle(fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
+              Text(category.name,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  overflow: TextOverflow.ellipsis),
             ),
-            DataCell(Text(category.description ?? '', overflow: TextOverflow.ellipsis)),
+            DataCell(Text(category.description ?? '',
+                overflow: TextOverflow.ellipsis)),
             // DataCell(Text(category.parentId ?? 'N/A')),
-            DataCell(Text(category.slug ?? '', overflow: TextOverflow.ellipsis)),
+            DataCell(
+                Text(category.imageUrl ?? '', overflow: TextOverflow.ellipsis)),
             DataCell(
               Row(
                 mainAxisSize: MainAxisSize.min,
@@ -93,7 +100,8 @@ class CategoriesDataTable extends StatelessWidget {
                     ),
                   if (onDelete != null)
                     IconButton(
-                      icon: const Icon(Icons.delete_outline, size: 20, color: Colors.redAccent),
+                      icon: const Icon(Icons.delete_outline,
+                          size: 20, color: Colors.redAccent),
                       tooltip: 'Delete Category',
                       onPressed: () => onDelete!(category.id),
                     ),

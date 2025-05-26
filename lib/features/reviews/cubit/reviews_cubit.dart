@@ -30,47 +30,64 @@ class ReviewsError extends ReviewsState {
 // --- Reviews Cubit ---
 class ReviewsCubit extends Cubit<ReviewsState> {
   final ReviewRepository _reviewRepository;
-  final ReviewService _reviewService; // For actions like delete or status change
+  final ReviewService
+      _reviewService; // For actions like delete or status change
 
   ReviewsCubit({
     ReviewRepository? reviewRepository,
     ReviewService? reviewService,
-  }) : _reviewRepository = reviewRepository ?? GetIt.instance<ReviewRepository>(),
-       _reviewService = reviewService ?? GetIt.instance<ReviewService>(),
-       super(ReviewsInitial());
+  })  : _reviewRepository =
+            reviewRepository ?? GetIt.instance<ReviewRepository>(),
+        _reviewService = reviewService ?? GetIt.instance<ReviewService>(),
+        super(ReviewsInitial());
 
   Future<void> loadReviews({
-    int page = 1, 
-    String? placeId, 
-    String? userId, 
-    ReviewStatus? status, // Assuming Review model has a status (e.g., pending, approved, rejected)
+    int page = 1,
+    String? placeId,
+    String? userId,
+    ReviewStatus?
+        status, // Assuming Review model has a status (e.g., pending, approved, rejected)
   }) async {
     emit(ReviewsLoading());
     try {
       // Example: Repository might have a versatile getReviews method
       // Or specific methods like getReviewsByPlaceId, getReviewsByUserId, getReviewsByStatus
-      final PagedResult<Review> pagedResult; // Assuming repository returns a PagedResult
-      
+      final PagedResult<Review>
+          pagedResult; // Assuming repository returns a PagedResult
+
       // This is a placeholder for actual filtering.
       // You'd likely pass filter parameters to the repository.
       // For simplicity, showing a generic load here.
       if (placeId != null) {
-          pagedResult = await _reviewRepository.getReviewsByPlaceId(placeId, page: page, limit: 20);
+        pagedResult = await _reviewRepository.getReviewsByPlaceId(
+          placeId,
+          page: page,
+          limit: 20,
+        );
       } else if (userId != null) {
-          pagedResult = await _reviewRepository.getReviewsByUserId(userId, page: page, limit: 20);
+        pagedResult = await _reviewRepository.getReviewsByUserId(
+          userId,
+          page: page,
+          limit: 20,
+        );
       } else if (status != null) {
-          pagedResult = await _reviewRepository.getReviewsByStatus(status, page: page, limit: 20);
-      }
-      else {
-         pagedResult = await _reviewRepository.getReviews(page: page, limit: 20);
+        pagedResult = await _reviewRepository.getReviewsByStatus(
+          status,
+          page: page,
+          limit: 20,
+        );
+      } else {
+        pagedResult =
+            await _reviewRepository.getAllReviews(page: page, limit: 20);
       }
 
-
-      emit(ReviewsLoaded(
-        reviews: pagedResult.items,
-        totalCount: pagedResult.totalCount,
-        currentPage: pagedResult.currentPage,
-      ));
+      emit(
+        ReviewsLoaded(
+          reviews: pagedResult.items,
+          totalCount: pagedResult.totalCount,
+          currentPage: pagedResult.currentPage,
+        ),
+      );
     } catch (e) {
       emit(ReviewsError(e.toString()));
     }
@@ -82,21 +99,28 @@ class ReviewsCubit extends Cubit<ReviewsState> {
       // Refresh the list. Consider current filters if any.
       // For simplicity, just calling loadReviews() which might reset to default filters.
       // A more sophisticated approach would re-load with the last used filters.
-      await loadReviews(); 
+      await loadReviews();
     } catch (e) {
       emit(ReviewsError('Error al eliminar reseña: ${e.toString()}'));
       // Optionally re-emit current data if state was ReviewsLoaded
     }
   }
-  
-  Future<void> updateReviewStatus(String reviewId, ReviewStatus newStatus) async {
+
+  Future<void> updateReviewStatus(
+    String reviewId,
+    ReviewStatus newStatus,
+  ) async {
     try {
-        // Assuming ReviewService has a method to update status
-        await _reviewService.updateReviewStatus(reviewId, newStatus);
-        // Refresh reviews to reflect the change
-        await loadReviews(); // Or update the specific review in the list locally
+      // Assuming ReviewService has a method to update status
+      await _reviewService.updateReviewStatus(reviewId, newStatus);
+      // Refresh reviews to reflect the change
+      await loadReviews(); // Or update the specific review in the list locally
     } catch (e) {
-        emit(ReviewsError('Error al actualizar estado de la reseña: ${e.toString()}'));
+      emit(
+        ReviewsError(
+          'Error al actualizar estado de la reseña: ${e.toString()}',
+        ),
+      );
     }
   }
 }

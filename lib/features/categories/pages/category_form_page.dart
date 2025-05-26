@@ -46,31 +46,32 @@ class _CategoryFormPageState extends State<CategoryFormPage> {
     if (category != null) {
       _nameController.text = category.name;
       _descriptionController.text = category.description ?? '';
-      _slugController.text = category.slug ?? '';
-      _iconUrlController.text = category.iconUrl ?? '';
+      _slugController.text = category.imageUrl ?? '';
+      _iconUrlController.text = category.icon ?? '';
       // If loading parent categories in CategoryFormCubit:
       // if (category.parentId != null && loadedParentCategories.isNotEmpty) {
       //   _selectedParentCategory = loadedParentCategories.firstWhere((p) => p.id == category.parentId, orElse: () => null);
       // }
-    } else { // For new category
-        _nameController.clear();
-        _descriptionController.clear();
-        _slugController.clear();
-        _iconUrlController.clear();
-        // _selectedParentCategory = null;
+    } else {
+      // For new category
+      _nameController.clear();
+      _descriptionController.clear();
+      _slugController.clear();
+      _iconUrlController.clear();
+      // _selectedParentCategory = null;
     }
   }
-  
+
   // Auto-generate slug from name
   void _generateSlugFromName() {
-      final name = _nameController.text;
-      final slug = name
-          .toLowerCase()
-          .replaceAll(RegExp(r'\s+'), '-') // Replace spaces with hyphens
-          .replaceAll(RegExp(r'[^\w-]'), ''); // Remove non-alphanumeric characters except hyphens
-      _slugController.text = slug;
+    final name = _nameController.text;
+    final slug = name
+        .toLowerCase()
+        .replaceAll(RegExp(r'\s+'), '-') // Replace spaces with hyphens
+        .replaceAll(RegExp(r'[^\w-]'),
+            ''); // Remove non-alphanumeric characters except hyphens
+    _slugController.text = slug;
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +79,8 @@ class _CategoryFormPageState extends State<CategoryFormPage> {
       create: (context) => GetIt.instance<CategoryFormCubit>()
         ..loadForm(categoryId: widget.categoryId),
       child: AdminScaffold(
-        title: widget.categoryId == null ? 'Crear Categoría' : 'Editar Categoría',
+        title:
+            widget.categoryId == null ? 'Crear Categoría' : 'Editar Categoría',
         body: BlocConsumer<CategoryFormCubit, CategoryFormState>(
           listener: (context, state) {
             if (state is CategoryFormSuccess) {
@@ -99,7 +101,7 @@ class _CategoryFormPageState extends State<CategoryFormPage> {
                     backgroundColor: Colors.red),
               );
             } else if (state is CategoryFormLoaded) {
-                _initializeControllers(state.category);
+              _initializeControllers(state.category);
             }
           },
           builder: (context, state) {
@@ -125,12 +127,21 @@ class _CategoryFormPageState extends State<CategoryFormPage> {
                 ),
               );
             }
-            
+
             if (state is CategoryFormSaving) {
-                return const Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [CircularProgressIndicator(), SizedBox(height: 10), Text("Guardando...")],));
+              return const Center(
+                  child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 10),
+                  Text("Guardando...")
+                ],
+              ));
             }
 
-            return const Center(child: Text('Error al cargar datos del formulario.'));
+            return const Center(
+                child: Text('Error al cargar datos del formulario.'));
           },
         ),
       ),
@@ -141,38 +152,46 @@ class _CategoryFormPageState extends State<CategoryFormPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Text('Detalles de la Categoría', style: Theme.of(context).textTheme.titleLarge),
+        Text('Detalles de la Categoría',
+            style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 20),
         TextFormField(
           controller: _nameController,
-          decoration: const InputDecoration(labelText: 'Nombre de Categoría', border: OutlineInputBorder()),
-          validator: (value) => (value == null || value.isEmpty) ? 'Ingresa un nombre' : null,
-          onChanged: (_) => _generateSlugFromName(), // Auto-generate slug when name changes
+          decoration: const InputDecoration(
+              labelText: 'Nombre de Categoría', border: OutlineInputBorder()),
+          validator: (value) =>
+              (value == null || value.isEmpty) ? 'Ingresa un nombre' : null,
+          onChanged: (_) =>
+              _generateSlugFromName(), // Auto-generate slug when name changes
         ),
         const SizedBox(height: 16),
         TextFormField(
           controller: _slugController,
           decoration: InputDecoration(
-            labelText: 'Slug (auto-generado)', 
-            border: OutlineInputBorder(),
-            suffixIcon: IconButton(
+              labelText: 'Slug (auto-generado)',
+              border: OutlineInputBorder(),
+              suffixIcon: IconButton(
                 icon: Icon(Icons.refresh),
                 tooltip: "Regenerar Slug",
                 onPressed: _generateSlugFromName,
-            )
-          ),
-          validator: (value) => (value == null || value.isEmpty) ? 'Ingresa un slug' : null,
+              )),
+          validator: (value) =>
+              (value == null || value.isEmpty) ? 'Ingresa un slug' : null,
         ),
         const SizedBox(height: 16),
         TextFormField(
           controller: _descriptionController,
-          decoration: const InputDecoration(labelText: 'Descripción (opcional)', border: OutlineInputBorder()),
+          decoration: const InputDecoration(
+              labelText: 'Descripción (opcional)',
+              border: OutlineInputBorder()),
           maxLines: 3,
         ),
         const SizedBox(height: 16),
         TextFormField(
           controller: _iconUrlController,
-          decoration: const InputDecoration(labelText: 'URL del Icono (opcional)', border: OutlineInputBorder()),
+          decoration: const InputDecoration(
+              labelText: 'URL del Icono (opcional)',
+              border: OutlineInputBorder()),
         ),
         // Add Dropdown for parent category if implemented in CategoryFormLoaded state
         // if (state.parentCategories.isNotEmpty) ...[
@@ -196,7 +215,8 @@ class _CategoryFormPageState extends State<CategoryFormPage> {
     return ElevatedButton.icon(
       icon: const Icon(Icons.save),
       label: const Text('Guardar Categoría'),
-      style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12)),
+      style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12)),
       onPressed: () {
         if (_formKey.currentState!.validate()) {
           // Construct Category object
@@ -204,17 +224,16 @@ class _CategoryFormPageState extends State<CategoryFormPage> {
             id: widget.categoryId ?? currentCategory?.id ?? '',
             name: _nameController.text,
             description: _descriptionController.text,
-            slug: _slugController.text,
-            iconUrl: _iconUrlController.text,
+            imageUrl: _iconUrlController.text,
+            icon: _iconUrlController.text,
             // parentId: _selectedParentCategory?.id,
-            
+
             // Ensure all required fields from core.Category are present
             // Example: if 'createdAt' or 'updatedAt' are managed by client
-            createdAt: currentCategory?.createdAt ?? DateTime.now(),
-            updatedAt: DateTime.now(), 
+            metadata: currentCategory?.metadata ?? {},
             // Add any other fields your Category model might have
             // e.g. order, isFeatured etc.
-            itemCount: currentCategory?.itemCount ?? 0, // Example field
+            placesCount: currentCategory?.placesCount ?? 0, // Example field
             // parentId: currentCategory?.parentId, // ensure this is handled if you have parent categories
             // order: currentCategory?.order ?? 0, // example field
           );
@@ -222,7 +241,9 @@ class _CategoryFormPageState extends State<CategoryFormPage> {
           context.read<CategoryFormCubit>().saveCategory(categoryToSave);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Por favor corrige los errores.'), backgroundColor: Colors.orangeAccent),
+            const SnackBar(
+                content: Text('Por favor corrige los errores.'),
+                backgroundColor: Colors.orangeAccent),
           );
         }
       },

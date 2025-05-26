@@ -1,4 +1,6 @@
+import 'package:core/core.dart';
 import 'package:get_it/get_it.dart';
+import 'package:turbo_admin/core/firebase/firebase_factory.dart';
 import 'package:turbo_admin/features/dashboard/cubit/dashboard_cubit.dart';
 import 'package:turbo_admin/features/places/cubit/place_form_cubit.dart';
 import 'package:turbo_admin/features/places/cubit/places_cubit.dart';
@@ -20,20 +22,24 @@ Future<void> initUIDependencies() async {
   // Using GetIt.instance directly as per main.dart setup
   final di = GetIt.instance;
 
+  // Inicializar Firebase de manera específica por plataforma
+  final firebaseApp = await FirebaseFactory.initializeApp();
+
+  await initCoreDependencies(sl: di, firebaseApp: firebaseApp);
   // Register Cubits for UI state management
   // These are typically registered as factories because they might be created
   // multiple times or have state that shouldn't persist globally like a singleton.
-  
+
   // Phase 1 Cubits
   di.registerFactory(() => DashboardCubit(
       // Repositories are expected to be already registered in GetIt by initCoreDependencies()
       // GetIt will resolve them automatically when DashboardCubit is created.
       ));
-      
+
   di.registerFactory(() => PlacesCubit(
       // Same here, PlaceRepository and PlaceService are expected from core's DI setup
       ));
-      
+
   di.registerFactory(() => PlaceFormCubit(
       // CategoryRepository, PlaceRepository, PlaceService expected from core's DI.
       ));

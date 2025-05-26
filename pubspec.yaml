@@ -1,11 +1,11 @@
 name: turbo_admin
 description: The admin panel for Turbo.
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.2.0 <4.0.0' # Adjusted to a more typical range, Flutter 3.29.0 is not a valid Dart SDK range. Let's assume current stable Flutter.
+  sdk: ">=3.2.0 <4.0.0" # Adjusted to a more typical range, Flutter 3.29.0 is not a valid Dart SDK range. Let's assume current stable Flutter.
 
 dependencies:
   flutter:
@@ -13,7 +13,10 @@ dependencies:
 
   # PAQUETE PRINCIPAL - contiene toda la lógica
   core:
-    path: ../turbo_core # Assuming turbo_core is in a parallel directory
+    git:
+      url: git@github.com:Turbo-Team-Org/Turbo_Core.git
+      ref: 1cce6bfcb97ac3c0592836038893c6b832776816
+      path: core
 
   # Solo para UI y estado
   flutter_bloc: ^8.1.6
@@ -27,15 +30,16 @@ dependencies:
   data_table_2: ^2.5.15
   file_picker: ^8.1.2
   image_picker: ^1.1.2
-  
-  # GetIt for dependency injection
-  get_it: ^7.7.0
 
+  # GetIt for dependency injection
+  get_it: ^8.0.3
+  intl: ^0.20.2
+  firebase_core: ^3.13.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  
+
   build_runner: ^2.4.7
   auto_route_generator: ^9.0.0 # Corresponding to auto_route
 

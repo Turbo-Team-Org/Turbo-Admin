@@ -1,21 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:turbo_admin/features/dashboard/pages/dashboard_page.dart'; // Placeholder
-import 'package:turbo_admin/features/places/pages/places_page.dart';     // Placeholder
+import 'package:turbo_admin/features/places/pages/places_page.dart'; // Placeholder
 import 'package:turbo_admin/features/places/pages/place_form_page.dart';
-import 'package:turbo_admin/features/events/pages/events_page.dart';       // Placeholder
+import 'package:turbo_admin/features/events/pages/events_page.dart'; // Placeholder
 import 'package:turbo_admin/features/events/pages/event_form_page.dart';
-import 'package:turbo_admin/features/reviews/pages/reviews_page.dart';     // Placeholder
+import 'package:turbo_admin/features/reviews/pages/reviews_page.dart'; // Placeholder
 import 'package:turbo_admin/features/reviews/pages/review_moderation_page.dart';
 import 'package:turbo_admin/features/categories/pages/categories_page.dart'; // Placeholder
 import 'package:turbo_admin/features/categories/pages/category_form_page.dart';
-import 'package:turbo_admin/features/users/pages/users_page.dart';         // Placeholder
+import 'package:turbo_admin/features/users/pages/users_page.dart'; // Placeholder
 import 'package:turbo_admin/features/users/pages/user_management_page.dart';
 // Import other pages as they are created (e.g., DashboardPage, SettingsPage)
 // For AdminScaffold to know the current selection, we might need a wrapper or pass it down.
 
-// Placeholder for the main shell of the application if using ShellRoute
-// import 'package:turbo_admin/core/widgets/admin_scaffold.dart'; // Already created
+import 'package:turbo_admin/core/widgets/admin_scaffold.dart';
 
 // Simple global key for the router's navigator state, useful for contextless navigation if needed
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -33,7 +32,7 @@ class AppRouter {
         name: 'dashboard',
         builder: (BuildContext context, GoRouterState state) {
           // Replace with actual DashboardPage when created
-          return const PlaceholderDashboardPage(); 
+          return const PlaceholderDashboardPage();
         },
       ),
 
@@ -43,7 +42,7 @@ class AppRouter {
         name: 'places',
         builder: (BuildContext context, GoRouterState state) {
           // Replace with actual PlacesPage (listing) when created
-          return const PlaceholderPlacesListPage(); 
+          return const PlaceholderPlacesListPage();
         },
         routes: <RouteBase>[
           GoRoute(
@@ -64,7 +63,7 @@ class AppRouter {
           // Potentially a details page: /places/:placeId
         ],
       ),
-      
+
       // === Events ===
       GoRoute(
         path: '/events',
@@ -104,13 +103,14 @@ class AppRouter {
             name: 'moderateReview',
             builder: (BuildContext context, GoRouterState state) {
               final reviewId = state.pathParameters['reviewId'];
-              if (reviewId == null) return const Text("Error: Review ID missing"); // Or redirect
+              if (reviewId == null)
+                return const Text("Error: Review ID missing"); // Or redirect
               return ReviewModerationPage(reviewId: reviewId);
             },
           ),
         ],
       ),
-      
+
       // === Categories ===
       GoRoute(
         path: '/categories',
@@ -136,7 +136,7 @@ class AppRouter {
           ),
         ],
       ),
-      
+
       // === Users ===
       GoRoute(
         path: '/users',
@@ -150,7 +150,8 @@ class AppRouter {
             name: 'manageUser',
             builder: (BuildContext context, GoRouterState state) {
               final userId = state.pathParameters['userId'];
-               if (userId == null) return const Text("Error: User ID missing"); // Or redirect
+              if (userId == null)
+                return const Text("Error: User ID missing"); // Or redirect
               return UserManagementPage(userId: userId);
             },
           ),
@@ -163,18 +164,138 @@ class AppRouter {
       // This would wrap all main sections (Dashboard, Places, Events etc.) within AdminScaffold,
       // allowing the sidebar to remain visible and interact with the router for navigation.
     ],
-    errorBuilder: (context, state) => Scaffold( // Basic error page
+    errorBuilder: (context, state) => Scaffold(
+      // Basic error page
       appBar: AppBar(title: const Text('Error')),
       body: Center(child: Text('Page not found: ${state.error?.message}')),
     ),
   );
 }
 
-// Placeholder Pages (to be replaced with actual implementations later or if not part of this task)
+// Placeholder Pages (to be replaced with actual implementations later)
 // These are temporary until the actual list pages are created.
-class PlaceholderDashboardPage extends StatelessWidget { const PlaceholderDashboardPage({super.key}); @override Widget build(BuildContext context) => const Scaffold(appBar: AppBar(title: Text("Dashboard")), body: Center(child: Text("Dashboard Page"))); }
-class PlaceholderPlacesListPage extends StatelessWidget { const PlaceholderPlacesListPage({super.key}); @override Widget build(BuildContext context) => const Scaffold(appBar: AppBar(title: Text("Places")), body: Center(child: Text("Places List Page"))); }
-class PlaceholderEventsListPage extends StatelessWidget { const PlaceholderEventsListPage({super.key}); @override Widget build(BuildContext context) => const Scaffold(appBar: AppBar(title: Text("Events")), body: Center(child: Text("Events List Page"))); }
-class PlaceholderReviewsListPage extends StatelessWidget { const PlaceholderReviewsListPage({super.key}); @override Widget build(BuildContext context) => const Scaffold(appBar: AppBar(title: Text("Reviews")), body: Center(child: Text("Reviews List Page"))); }
-class PlaceholderCategoriesListPage extends StatelessWidget { const PlaceholderCategoriesListPage({super.key}); @override Widget build(BuildContext context) => const Scaffold(appBar: AppBar(title: Text("Categories")), body: Center(child: Text("Categories List Page"))); }
-class PlaceholderUsersListPage extends StatelessWidget { const PlaceholderUsersListPage({super.key}); @override Widget build(BuildContext context) => const Scaffold(appBar: AppBar(title: Text("Users")), body: Center(child: Text("Users List Page"))); }
+class PlaceholderDashboardPage extends StatelessWidget {
+  const PlaceholderDashboardPage({super.key});
+
+  @override
+  Widget build(BuildContext context) => const AdminScaffold(
+        title: "Dashboard",
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.dashboard, size: 64, color: Colors.grey),
+              SizedBox(height: 16),
+              Text("Dashboard Page", style: TextStyle(fontSize: 24)),
+              SizedBox(height: 8),
+              Text("Aquí irán las métricas y estadísticas principales"),
+            ],
+          ),
+        ),
+      );
+}
+
+class PlaceholderPlacesListPage extends StatelessWidget {
+  const PlaceholderPlacesListPage({super.key});
+
+  @override
+  Widget build(BuildContext context) => const AdminScaffold(
+        title: "Gestión de Lugares",
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.place, size: 64, color: Colors.grey),
+              SizedBox(height: 16),
+              Text("Lista de Lugares", style: TextStyle(fontSize: 24)),
+              SizedBox(height: 8),
+              Text("Aquí se mostrarán todos los lugares registrados"),
+            ],
+          ),
+        ),
+      );
+}
+
+class PlaceholderEventsListPage extends StatelessWidget {
+  const PlaceholderEventsListPage({super.key});
+
+  @override
+  Widget build(BuildContext context) => const AdminScaffold(
+        title: "Gestión de Eventos",
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.event, size: 64, color: Colors.grey),
+              SizedBox(height: 16),
+              Text("Lista de Eventos", style: TextStyle(fontSize: 24)),
+              SizedBox(height: 8),
+              Text("Aquí se mostrarán todos los eventos programados"),
+            ],
+          ),
+        ),
+      );
+}
+
+class PlaceholderReviewsListPage extends StatelessWidget {
+  const PlaceholderReviewsListPage({super.key});
+
+  @override
+  Widget build(BuildContext context) => const AdminScaffold(
+        title: "Moderación de Reseñas",
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.reviews, size: 64, color: Colors.grey),
+              SizedBox(height: 16),
+              Text("Lista de Reseñas", style: TextStyle(fontSize: 24)),
+              SizedBox(height: 8),
+              Text("Aquí se moderarán las reseñas de usuarios"),
+            ],
+          ),
+        ),
+      );
+}
+
+class PlaceholderCategoriesListPage extends StatelessWidget {
+  const PlaceholderCategoriesListPage({super.key});
+
+  @override
+  Widget build(BuildContext context) => const AdminScaffold(
+        title: "Gestión de Categorías",
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.category, size: 64, color: Colors.grey),
+              SizedBox(height: 16),
+              Text("Lista de Categorías", style: TextStyle(fontSize: 24)),
+              SizedBox(height: 8),
+              Text("Aquí se gestionarán las categorías de lugares"),
+            ],
+          ),
+        ),
+      );
+}
+
+class PlaceholderUsersListPage extends StatelessWidget {
+  const PlaceholderUsersListPage({super.key});
+
+  @override
+  Widget build(BuildContext context) => const AdminScaffold(
+        title: "Gestión de Usuarios",
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.people, size: 64, color: Colors.grey),
+              SizedBox(height: 16),
+              Text("Lista de Usuarios", style: TextStyle(fontSize: 24)),
+              SizedBox(height: 8),
+              Text("Aquí se gestionarán los usuarios de la aplicación"),
+            ],
+          ),
+        ),
+      );
+}

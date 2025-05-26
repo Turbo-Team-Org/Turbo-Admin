@@ -26,7 +26,7 @@ class _EventFormPageState extends State<EventFormPage> {
   Place? _selectedPlace;
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
-  EventStatus _selectedStatus = EventStatus.upcoming; // Default status
+  EventType _selectedStatus = EventType.concert; // Default status
 
   // Add controllers for other Event fields as needed (e.g., ticketPrice, capacity)
 
@@ -48,28 +48,30 @@ class _EventFormPageState extends State<EventFormPage> {
 
   void _initializeControllers(Event? event, List<Place> availablePlaces) {
     if (event != null) {
-      _nameController.text = event.name;
+      _nameController.text = event.title;
       _descriptionController.text = event.description ?? '';
       // _venueDetailsController.text = event.venueDetails ?? '';
       _selectedDate = event.date;
       _selectedTime = TimeOfDay.fromDateTime(event.date);
-      _selectedStatus = event.status;
+      _selectedStatus = event.type;
 
       if (event.placeId != null && availablePlaces.isNotEmpty) {
         try {
-          _selectedPlace = availablePlaces.firstWhere((p) => p.id == event.placeId);
+          _selectedPlace =
+              availablePlaces.firstWhere((p) => p.id == event.placeId);
         } catch (e) {
           _selectedPlace = null; // Place not found in the list
         }
       }
-    } else { // Reset for new form
-        _nameController.clear();
-        _descriptionController.clear();
-        // _venueDetailsController.clear();
-        _selectedPlace = null;
-        _selectedDate = null;
-        _selectedTime = null;
-        _selectedStatus = EventStatus.upcoming;
+    } else {
+      // Reset for new form
+      _nameController.clear();
+      _descriptionController.clear();
+      // _venueDetailsController.clear();
+      _selectedPlace = null;
+      _selectedDate = null;
+      _selectedTime = null;
+      _selectedStatus = EventType.concert;
     }
   }
 
@@ -126,7 +128,7 @@ class _EventFormPageState extends State<EventFormPage> {
                     backgroundColor: Colors.red),
               );
             } else if (state is EventFormLoaded) {
-                _initializeControllers(state.event, state.places);
+              _initializeControllers(state.event, state.places);
             }
           },
           builder: (context, state) {
@@ -156,10 +158,19 @@ class _EventFormPageState extends State<EventFormPage> {
                 ),
               );
             }
-             if (state is EventFormSaving) {
-                return const Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [CircularProgressIndicator(), SizedBox(height: 10), Text("Guardando...")],));
+            if (state is EventFormSaving) {
+              return const Center(
+                  child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 10),
+                  Text("Guardando...")
+                ],
+              ));
             }
-            return const Center(child: Text('Error al cargar datos del formulario.'));
+            return const Center(
+                child: Text('Error al cargar datos del formulario.'));
           },
         ),
       ),
@@ -180,13 +191,16 @@ class _EventFormPageState extends State<EventFormPage> {
         _buildSectionTitle('Información del Evento'),
         TextFormField(
           controller: _nameController,
-          decoration: const InputDecoration(labelText: 'Nombre del Evento', border: OutlineInputBorder()),
-          validator: (value) => (value == null || value.isEmpty) ? 'Ingresa un nombre' : null,
+          decoration: const InputDecoration(
+              labelText: 'Nombre del Evento', border: OutlineInputBorder()),
+          validator: (value) =>
+              (value == null || value.isEmpty) ? 'Ingresa un nombre' : null,
         ),
         const SizedBox(height: 16),
         TextFormField(
           controller: _descriptionController,
-          decoration: const InputDecoration(labelText: 'Descripción', border: OutlineInputBorder()),
+          decoration: const InputDecoration(
+              labelText: 'Descripción', border: OutlineInputBorder()),
           maxLines: 3,
         ),
         // const SizedBox(height: 16),
@@ -201,12 +215,14 @@ class _EventFormPageState extends State<EventFormPage> {
   Widget _buildPlaceSelection(BuildContext context, List<Place> places) {
     // Ensure _selectedPlace is valid if editing
     if (widget.eventId != null && _selectedPlace == null && places.isNotEmpty) {
-        final currentEvent = (context.read<EventFormCubit>().state as EventFormLoaded).event;
-        if (currentEvent != null && currentEvent.placeId != null) {
-            try {
-                _selectedPlace = places.firstWhere((p) => p.id == currentEvent.placeId);
-            } catch (e) { /* Place not in list */ }
-        }
+      final currentEvent =
+          (context.read<EventFormCubit>().state as EventFormLoaded).event;
+      if (currentEvent != null && currentEvent.placeId != null) {
+        try {
+          _selectedPlace =
+              places.firstWhere((p) => p.id == currentEvent.placeId);
+        } catch (e) {/* Place not in list */}
+      }
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -217,7 +233,8 @@ class _EventFormPageState extends State<EventFormPage> {
         else
           DropdownButtonFormField<Place>(
             value: _selectedPlace,
-            decoration: const InputDecoration(labelText: 'Selecciona un Lugar', border: OutlineInputBorder()),
+            decoration: const InputDecoration(
+                labelText: 'Selecciona un Lugar', border: OutlineInputBorder()),
             items: places.map((Place place) {
               return DropdownMenuItem<Place>(
                 value: place,
@@ -246,8 +263,12 @@ class _EventFormPageState extends State<EventFormPage> {
               child: InkWell(
                 onTap: () => _pickDate(context),
                 child: InputDecorator(
-                  decoration: const InputDecoration(labelText: 'Fecha del Evento', border: OutlineInputBorder()),
-                  child: Text(_selectedDate != null ? DateFormat('dd MMM yyyy').format(_selectedDate!) : 'No seleccionada'),
+                  decoration: const InputDecoration(
+                      labelText: 'Fecha del Evento',
+                      border: OutlineInputBorder()),
+                  child: Text(_selectedDate != null
+                      ? DateFormat('dd MMM yyyy').format(_selectedDate!)
+                      : 'No seleccionada'),
                 ),
               ),
             ),
@@ -256,46 +277,53 @@ class _EventFormPageState extends State<EventFormPage> {
               child: InkWell(
                 onTap: () => _pickTime(context),
                 child: InputDecorator(
-                  decoration: const InputDecoration(labelText: 'Hora del Evento', border: OutlineInputBorder()),
-                  child: Text(_selectedTime != null ? _selectedTime!.format(context) : 'No seleccionada'),
+                  decoration: const InputDecoration(
+                      labelText: 'Hora del Evento',
+                      border: OutlineInputBorder()),
+                  child: Text(_selectedTime != null
+                      ? _selectedTime!.format(context)
+                      : 'No seleccionada'),
                 ),
               ),
             ),
           ],
         ),
         if (_selectedDate == null || _selectedTime == null)
-            Padding(
-                padding: const EdgeInsets.only(top: 8.0),
-                child: Text('Fecha y hora son requeridas.', style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 12)),
-            )
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Text('Fecha y hora son requeridas.',
+                style: TextStyle(
+                    color: Theme.of(context).colorScheme.error, fontSize: 12)),
+          )
       ],
     );
   }
-  
+
   Widget _buildStatusSelection(BuildContext context) {
     return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-            _buildSectionTitle('Estado del Evento'),
-            DropdownButtonFormField<EventStatus>(
-                value: _selectedStatus,
-                decoration: const InputDecoration(labelText: 'Estado', border: OutlineInputBorder()),
-                items: EventStatus.values.map((EventStatus status) {
-                return DropdownMenuItem<EventStatus>(
-                    value: status,
-                    child: Text(status.name.toUpperCase()), // Assuming enum has .name
-                );
-                }).toList(),
-                onChanged: (EventStatus? newValue) {
-                if (newValue != null) {
-                    setState(() {
-                    _selectedStatus = newValue;
-                    });
-                }
-                },
-                validator: (value) => value == null ? 'Estado es requerido' : null,
-            ),
-        ],
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        _buildSectionTitle('Estado del Evento'),
+        DropdownButtonFormField<EventType>(
+          value: _selectedStatus,
+          decoration: const InputDecoration(
+              labelText: 'Estado', border: OutlineInputBorder()),
+          items: EventType.values.map((EventType status) {
+            return DropdownMenuItem<EventType>(
+              value: status,
+              child: Text(status.name.toUpperCase()), // Assuming enum has .name
+            );
+          }).toList(),
+          onChanged: (EventType? newValue) {
+            if (newValue != null) {
+              setState(() {
+                _selectedStatus = newValue;
+              });
+            }
+          },
+          validator: (value) => value == null ? 'Estado es requerido' : null,
+        ),
+      ],
     );
   }
 
@@ -303,40 +331,49 @@ class _EventFormPageState extends State<EventFormPage> {
     return ElevatedButton.icon(
       icon: const Icon(Icons.save),
       label: const Text('Guardar Evento'),
-      style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12)),
+      style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12)),
       onPressed: () {
-        if (_formKey.currentState!.validate() && _selectedDate != null && _selectedTime != null && _selectedPlace != null) {
+        if (_formKey.currentState!.validate() &&
+            _selectedDate != null &&
+            _selectedTime != null &&
+            _selectedPlace != null) {
           final DateTime eventDateTime = DateTime(
-            _selectedDate!.year, _selectedDate!.month, _selectedDate!.day,
-            _selectedTime!.hour, _selectedTime!.minute,
+            _selectedDate!.year,
+            _selectedDate!.month,
+            _selectedDate!.day,
+            _selectedTime!.hour,
+            _selectedTime!.minute,
           );
 
           // Construct Event object based on your core.Event model
           final eventToSave = Event(
             id: widget.eventId ?? currentEvent?.id ?? '',
-            name: _nameController.text,
+            title: _nameController.text,
             description: _descriptionController.text,
             date: eventDateTime,
-            placeId: _selectedPlace!.id, 
-            placeName: _selectedPlace!.name, // Store for convenience if needed
-            status: _selectedStatus,
-            
+            placeId: _selectedPlace!.id,
+            location: _selectedPlace!.metadata['address'] ??
+                '', // Store for convenience if needed
+            type: _selectedStatus,
+
             // --- Defaults/current values for other required fields from Event model ---
             // These must match your Event model definition in turbo_core
-            mainImage: currentEvent?.mainImage ?? '', // Placeholder, image handling is complex
-            ticketPrice: currentEvent?.ticketPrice ?? 0.0,
-            capacity: currentEvent?.capacity ?? 0,
+            imageUrl: currentEvent?.imageUrl ??
+                '', // Placeholder, image handling is complex
+            price: currentEvent?.price ?? 0.0,
             tags: currentEvent?.tags ?? [],
-            organizerId: currentEvent?.organizerId ?? '', // May need to be set
-            createdAt: currentEvent?.createdAt ?? DateTime.now(),
-            updatedAt: DateTime.now(),
+            organizerName: currentEvent?.organizerName ?? '',
             // venueDetails: _venueDetailsController.text, // if you add this field
           );
 
           context.read<EventFormCubit>().saveEvent(eventToSave);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Por favor corrige los errores e ingresa toda la información requerida.'), backgroundColor: Colors.orangeAccent),
+            const SnackBar(
+                content: Text(
+                    'Por favor corrige los errores e ingresa toda la información requerida.'),
+                backgroundColor: Colors.orangeAccent),
           );
         }
       },

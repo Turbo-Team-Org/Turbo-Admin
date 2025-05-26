@@ -8,8 +8,7 @@ class ReviewsDataTable extends StatelessWidget {
   final VoidCallback? onRefresh;
   final Function(String reviewId)? onModerate; // To open moderation page/dialog
   final Function(String reviewId)? onDelete;
-  final Function(String reviewId, ReviewStatus newStatus)? onUpdateStatus;
-
+  final Function(String reviewId, Review newStatus)? onUpdateStatus;
 
   const ReviewsDataTable({
     super.key,
@@ -46,15 +45,16 @@ class ReviewsDataTable extends StatelessWidget {
       columnSpacing: 12,
       horizontalMargin: 12,
       minWidth: 1000, // Adjusted for review data
-      sortAscending: true, 
+      sortAscending: true,
       columns: const [
         DataColumn2(label: Text('Usuario'), size: ColumnSize.M),
         DataColumn2(label: Text('Lugar/Evento'), size: ColumnSize.L),
         DataColumn2(label: Text('Rating'), numeric: true, size: ColumnSize.S),
         DataColumn2(label: Text('Comentario'), size: ColumnSize.L),
         DataColumn2(label: Text('Fecha'), size: ColumnSize.M),
-        DataColumn2(label: Text('Estado'), size: ColumnSize.M),
-        DataColumn2(label: Text('Acciones'), size: ColumnSize.M, fixedWidth: 180),
+        //DataColumn2(label: Text('Estado'), size: ColumnSize.M),
+        DataColumn2(
+            label: Text('Acciones'), size: ColumnSize.M, fixedWidth: 180),
       ],
       rows: reviews.map((review) {
         // Assuming Review model has fields like:
@@ -68,32 +68,37 @@ class ReviewsDataTable extends StatelessWidget {
         // DateTime createdAt;
         // ReviewStatus status;
 
-        String formattedDate = DateFormat('dd MMM yyyy, hh:mm a').format(review.createdAt);
-        
+        String formattedDate =
+            DateFormat('dd MMM yyyy, hh:mm a').format(review.date);
+
         return DataRow2(
           cells: [
-            DataCell(
-                Text(review.userName ?? review.userId, overflow: TextOverflow.ellipsis)), // Display userName or userId
-            DataCell(
-                Text(review.targetName ?? 'N/A', overflow: TextOverflow.ellipsis)), // Assuming targetName holds Place/Event name
+            DataCell(Text(review.userName ?? review.userId,
+                overflow: TextOverflow.ellipsis)), // Display userName or userId
+            DataCell(Text(review.createdAt.toString(),
+                overflow: TextOverflow
+                    .ellipsis)), // Assuming targetName holds Place/Event name
             DataCell(Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.star, color: Colors.amber, size: 16),
-                SizedBox(width: 4),
+                const Icon(Icons.star, color: Colors.amber, size: 16),
+                const SizedBox(width: 4),
                 Text(review.rating.toStringAsFixed(1)),
               ],
             )),
-            DataCell(Text(review.comment ?? '', overflow: TextOverflow.ellipsis, maxLines: 2)),
+            DataCell(Text(review.comment ?? '',
+                overflow: TextOverflow.ellipsis, maxLines: 2)),
             DataCell(Text(formattedDate)),
+            /*
             DataCell(
               Chip(
-                label: Text(review.status.name.toUpperCase(), style: TextStyle(fontSize: 10)),
+                label: Text(review.status.name.toUpperCase(), style: const TextStyle(fontSize: 10)),
                 backgroundColor: _getStatusColor(review.status, context).withOpacity(0.1),
-                labelStyle: TextStyle(color: _getStatusColor(review.status, context)),
+                labelStyle: const TextStyle(color: _getStatusColor(review.status, context)),
                 padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               ),
             ),
+            */
             DataCell(
               Row(
                 mainAxisSize: MainAxisSize.min,
@@ -106,23 +111,28 @@ class ReviewsDataTable extends StatelessWidget {
                     ),
                   if (onDelete != null)
                     IconButton(
-                      icon: const Icon(Icons.delete_outline, size: 20, color: Colors.redAccent),
+                      icon: const Icon(Icons.delete_outline,
+                          size: 20, color: Colors.redAccent),
                       tooltip: 'Eliminar Reseña',
                       onPressed: () => onDelete!(review.id),
                     ),
                   // Quick status change buttons
-                  if (onUpdateStatus != null && review.status == ReviewStatus.pending)
-                    IconButton(
-                      icon: Icon(Icons.check_circle_outline, color: Colors.green.shade600, size: 20),
+                  //  if (onUpdateStatus != null && review.status == ReviewStatus.pending)
+                  IconButton(
+                      icon: Icon(Icons.check_circle_outline,
+                          color: Colors.green.shade600, size: 20),
                       tooltip: 'Aprobar',
-                      onPressed: () => onUpdateStatus!(review.id, ReviewStatus.approved),
-                    ),
-                  if (onUpdateStatus != null && review.status == ReviewStatus.pending)
-                     IconButton(
-                      icon: Icon(Icons.highlight_off_outlined, color: Colors.orange.shade700, size: 20),
+                      onPressed:
+                          () {} // onUpdateStatus!(review.id, ReviewStatus.approved),
+                      ),
+                  //    if (onUpdateStatus != null && review.status == ReviewStatus.pending)
+                  IconButton(
+                      icon: Icon(Icons.highlight_off_outlined,
+                          color: Colors.orange.shade700, size: 20),
                       tooltip: 'Rechazar',
-                      onPressed: () => onUpdateStatus!(review.id, ReviewStatus.rejected),
-                    ),
+                      onPressed:
+                          () {} // onUpdateStatus!(review.id, ReviewStatus.rejected),
+                      ),
                 ],
               ),
             ),
@@ -131,6 +141,7 @@ class ReviewsDataTable extends StatelessWidget {
       }).toList(),
     );
   }
+  /*
 
   Color _getStatusColor(ReviewStatus status, BuildContext context) {
     // Assuming ReviewStatus enum (pending, approved, rejected) exists in core/core.dart
@@ -145,4 +156,5 @@ class ReviewsDataTable extends StatelessWidget {
         return Theme.of(context).textTheme.bodySmall?.color ?? Colors.black;
     }
   }
+  */
 }

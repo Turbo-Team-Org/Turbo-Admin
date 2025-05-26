@@ -24,17 +24,34 @@ class PlaceholderReviewsListPage extends StatelessWidget {
             if (state is ReviewsLoaded) {
               return ReviewsDataTable(
                 reviews: state.reviews,
-                onModerate: (reviewId) => context.goNamed('moderateReview', pathParameters: {'reviewId': reviewId}),
+                onModerate: (reviewId) => context.goNamed('moderateReview',
+                    pathParameters: {'reviewId': reviewId}),
                 onDelete: (reviewId) {
-                    showDialog(context: context, builder: (_) => AlertDialog(
-                        title: const Text("Confirmar Eliminación"),
-                        content: const Text("¿Seguro que quieres eliminar esta reseña?"),
-                        actions: [ TextButton(onPressed: ()=>Navigator.pop(context), child: const Text("Cancelar")), TextButton(onPressed: (){ context.read<ReviewsCubit>().deleteReview(reviewId); Navigator.pop(context);}, child: Text("Eliminar", style: TextStyle(color: Colors.red))) ],
-                    ));
+                  showDialog(
+                      context: context,
+                      builder: (_) => AlertDialog(
+                            title: const Text("Confirmar Eliminación"),
+                            content: const Text(
+                                "¿Seguro que quieres eliminar esta reseña?"),
+                            actions: [
+                              TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text("Cancelar")),
+                              TextButton(
+                                  onPressed: () {
+                                    context
+                                        .read<ReviewsCubit>()
+                                        .deleteReview(reviewId);
+                                    Navigator.pop(context);
+                                  },
+                                  child: Text("Eliminar",
+                                      style: TextStyle(color: Colors.red)))
+                            ],
+                          ));
                 },
                 onUpdateStatus: (reviewId, newStatus) {
                   // Optional: Show a quick confirmation or handle errors if the cubit emits them
-                  context.read<ReviewsCubit>().updateReviewStatus(reviewId, newStatus);
+                  //  context.read<ReviewsCubit>().updateReviewStatus(reviewId, newStatus);
                 },
                 onRefresh: () => context.read<ReviewsCubit>().loadReviews(),
               );

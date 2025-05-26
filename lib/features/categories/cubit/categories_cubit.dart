@@ -30,21 +30,20 @@ class CategoriesError extends CategoriesState {
 // --- Categories Cubit ---
 class CategoriesCubit extends Cubit<CategoriesState> {
   final CategoryRepository _categoryRepository;
-  final CategoryService _categoryService;
 
   CategoriesCubit({
     CategoryRepository? categoryRepository,
     CategoryService? categoryService,
-  }) : _categoryRepository = categoryRepository ?? GetIt.instance<CategoryRepository>(),
-       _categoryService = categoryService ?? GetIt.instance<CategoryService>(),
-       super(CategoriesInitial());
+  })  : _categoryRepository =
+            categoryRepository ?? GetIt.instance<CategoryRepository>(),
+        super(CategoriesInitial());
 
   Future<void> loadCategories({int page = 1 /* if paginated */}) async {
     emit(CategoriesLoading());
     try {
       // Assuming CategoryRepository.getCategories() returns all categories
       // If paginated, it should accept page/limit parameters
-      final categories = await _categoryRepository.getCategories();
+      final categories = await _categoryRepository.getAllCategories();
       emit(CategoriesLoaded(
         categories: categories,
         // totalCount: categories.length, // Or from paginated result
@@ -59,16 +58,17 @@ class CategoriesCubit extends Cubit<CategoriesState> {
     // Consider the current state to provide better UX, e.g., show a small loading indicator
     // or temporarily disable the delete button for the specific item.
     try {
-      await _categoryService.deleteCategory(categoryId);
+      await _categoryRepository.deleteCategory(categoryId);
       // Refresh the list after deletion
-      await loadCategories(); 
+      await loadCategories();
     } catch (e) {
       // If the list was previously loaded, you might want to show the error
       // without losing the currently displayed data.
       if (state is CategoriesLoaded) {
         final currentCategories = (state as CategoriesLoaded).categories;
         emit(CategoriesError('Error al eliminar categoría: ${e.toString()}'));
-        emit(CategoriesLoaded(categories: currentCategories)); // Re-emit current data
+        emit(CategoriesLoaded(
+            categories: currentCategories)); // Re-emit current data
       } else {
         emit(CategoriesError('Error al eliminar categoría: ${e.toString()}'));
       }

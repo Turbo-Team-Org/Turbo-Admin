@@ -8,7 +8,8 @@ class EventsDataTable extends StatelessWidget {
   final VoidCallback? onRefresh;
   final Function(String eventId)? onEdit;
   final Function(String eventId)? onDelete;
-  final Function(String eventId)? onView; // e.g., to navigate to an event details page
+  final Function(String eventId)?
+      onView; // e.g., to navigate to an event details page
 
   const EventsDataTable({
     super.key,
@@ -51,8 +52,11 @@ class EventsDataTable extends StatelessWidget {
         DataColumn2(label: Text('Lugar'), size: ColumnSize.M),
         DataColumn2(label: Text('Fecha'), size: ColumnSize.M),
         DataColumn2(label: Text('Hora'), size: ColumnSize.S),
-        DataColumn2(label: Text('Estado'), size: ColumnSize.S), // e.g., upcoming, past, cancelled
-        DataColumn2(label: Text('Acciones'), size: ColumnSize.M, fixedWidth: 150),
+        DataColumn2(
+            label: Text('Estado'),
+            size: ColumnSize.S), // e.g., upcoming, past, cancelled
+        DataColumn2(
+            label: Text('Acciones'), size: ColumnSize.M, fixedWidth: 150),
       ],
       rows: events.map((event) {
         // Assuming Event model has fields like:
@@ -64,7 +68,8 @@ class EventsDataTable extends StatelessWidget {
         // String mainImage; (optional)
 
         String formattedDate = DateFormat('dd MMM yyyy').format(event.date);
-        String formattedTime = DateFormat('hh:mm a').format(event.date); // Or event.time if separate
+        String formattedTime = DateFormat('hh:mm a')
+            .format(event.date); // Or event.time if separate
 
         return DataRow2(
           // onSelectChanged: onView != null ? (selected) { if (selected ?? false) onView!(event.id); } : null,
@@ -72,11 +77,13 @@ class EventsDataTable extends StatelessWidget {
             DataCell(
               Row(
                 children: [
-                  if (event.mainImage != null && event.mainImage!.isNotEmpty)
+                  if (event.imageUrl != null && event.imageUrl.isNotEmpty)
                     CircleAvatar(
-                      backgroundImage: NetworkImage(event.mainImage!),
+                      backgroundImage: NetworkImage(event.imageUrl),
                       radius: 16,
-                      child: event.mainImage!.isEmpty ? const Icon(Icons.event, size: 16) : null,
+                      child: event.imageUrl.isEmpty
+                          ? const Icon(Icons.event, size: 16)
+                          : null,
                     )
                   else
                     const CircleAvatar(
@@ -85,19 +92,23 @@ class EventsDataTable extends StatelessWidget {
                     ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text(event.name, style: const TextStyle(fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
+                    child: Text(event.title,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        overflow: TextOverflow.ellipsis),
                   ),
                 ],
               ),
             ),
-            DataCell(Text(event.placeName ?? 'N/A')), // Assuming event.placeName or event.place.name
+            DataCell(Text(event.location ??
+                'N/A')), // Assuming event.placeName or event.place.name
             DataCell(Text(formattedDate)),
             DataCell(Text(formattedTime)),
             DataCell(
               Chip(
-                label: Text(event.status.name.toUpperCase()), // Assuming EventStatus is an enum with a 'name' property
-                backgroundColor: _getStatusColor(event.status).withOpacity(0.1),
-                labelStyle: TextStyle(color: _getStatusColor(event.status)),
+                label: Text(event.type.name
+                    .toUpperCase()), // Assuming EventStatus is an enum with a 'name' property
+                backgroundColor: _getStatusColor(event.type).withOpacity(0.1),
+                labelStyle: TextStyle(color: _getStatusColor(event.type)),
               ),
             ),
             DataCell(
@@ -118,7 +129,8 @@ class EventsDataTable extends StatelessWidget {
                     ),
                   if (onDelete != null)
                     IconButton(
-                      icon: const Icon(Icons.delete_outline, size: 20, color: Colors.redAccent),
+                      icon: const Icon(Icons.delete_outline,
+                          size: 20, color: Colors.redAccent),
                       tooltip: 'Delete Event',
                       onPressed: () => onDelete!(event.id),
                     ),
@@ -131,17 +143,19 @@ class EventsDataTable extends StatelessWidget {
     );
   }
 
-  Color _getStatusColor(EventStatus status) {
+  Color _getStatusColor(EventType status) {
     // Assuming EventStatus enum exists in core/core.dart
     switch (status) {
-      case EventStatus.upcoming:
+      case EventType.concert:
         return Colors.blue.shade700;
-      case EventStatus.past:
+      case EventType.party:
         return Colors.grey.shade700;
-      case EventStatus.cancelled:
+      case EventType.cultural:
         return Colors.red.shade700;
-      default:
-        return Colors.black;
+      case EventType.offer:
+        return Colors.green.shade700;
+      case EventType.promotion:
+        return Colors.purple.shade700;
     }
   }
 }
