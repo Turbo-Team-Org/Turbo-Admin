@@ -38,11 +38,10 @@ class UserManagementCubit extends Cubit<UserManagementState> {
   // final RoleRepository _roleRepository; // If roles are fetched from a repository
 
   UserManagementCubit({
-    AuthenticationRepository? userRepository,
+    required AuthenticationRepository userRepository,
 
     // RoleRepository? roleRepository,
-  })  : _userRepository =
-            userRepository ?? GetIt.instance<AuthenticationRepository>(),
+  })  : _userRepository = userRepository,
 
         // _roleRepository = roleRepository ?? GetIt.instance<RoleRepository>(),
         super(UserManagementInitial());

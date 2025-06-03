@@ -5,7 +5,6 @@ import 'package:core/core.dart'; // For Place model and PlaceRepository/PlaceSer
 // import 'package:core/repositories/place_repository.dart';
 // import 'package:core/services/place_service.dart';
 
-
 // --- Places States ---
 abstract class PlacesState {}
 
@@ -33,14 +32,11 @@ class PlacesError extends PlacesState {
 // --- Places Cubit ---
 class PlacesCubit extends Cubit<PlacesState> {
   final PlaceRepository _placeRepository;
-  final PlaceService _placeService;
 
   PlacesCubit({
-    PlaceRepository? placeRepository,
-    PlaceService? placeService,
-  }) : _placeRepository = placeRepository ?? GetIt.instance<PlaceRepository>(),
-       _placeService = placeService ?? GetIt.instance<PlaceService>(),
-       super(PlacesInitial());
+    required PlaceRepository placeRepository,
+  })  : _placeRepository = placeRepository,
+        super(PlacesInitial());
 
   Future<void> loadPlaces({int page = 1, String? categoryId}) async {
     emit(PlacesLoading());
@@ -49,12 +45,14 @@ class PlacesCubit extends Cubit<PlacesState> {
       if (categoryId != null && categoryId.isNotEmpty) {
         places = await _placeRepository.getPlacesByCategory(categoryId);
       } else {
-        places = await _placeRepository.getPlaces(); // Assuming this gets all or a page
+        places = await _placeRepository
+            .getPlaces(); // Assuming this gets all or a page
       }
       // TODO: Implement actual pagination in repository if needed
       emit(PlacesLoaded(
         places: places,
-        totalCount: places.length, // This would be different with actual pagination
+        totalCount:
+            places.length, // This would be different with actual pagination
         currentPage: page,
       ));
     } catch (e) {
@@ -68,9 +66,9 @@ class PlacesCubit extends Cubit<PlacesState> {
     // final previousState = state;
     // emit(PlacesLoading()); // Or a specific DeletingPlaceState
     try {
-      await _placeService.deletePlace(placeId);
+      await _placeRepository.deletePlace(placeId);
       // Reload places after deletion
-      await loadPlaces(); 
+      await loadPlaces();
       // Alternatively, if PlacesLoaded holds the list, remove it manually and re-emit
     } catch (e) {
       emit(PlacesError('Error al eliminar: ${e.toString()}'));

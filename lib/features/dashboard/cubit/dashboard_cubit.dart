@@ -2,7 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:core/core.dart'; // Assuming models like Place, Event, Review are here
 // You might need to import specific repositories if not covered by a general core.dart
-// e.g., import 'package:core/repositories/place_repository.dart'; 
+// e.g., import 'package:core/repositories/place_repository.dart';
 
 // --- UI Specific Model (Not from core) ---
 class DashboardStats {
@@ -44,12 +44,12 @@ class DashboardCubit extends Cubit<DashboardState> {
   final ReviewRepository _reviewRepository;
 
   DashboardCubit({
-    PlaceRepository? placeRepository,
-    EventRepository? eventRepository,
-    ReviewRepository? reviewRepository,
-  })  : _placeRepository = placeRepository ?? GetIt.instance<PlaceRepository>(),
-        _eventRepository = eventRepository ?? GetIt.instance<EventRepository>(),
-        _reviewRepository = reviewRepository ?? GetIt.instance<ReviewRepository>(),
+    required PlaceRepository placeRepository,
+    required EventRepository eventRepository,
+    required ReviewRepository reviewRepository,
+  })  : _placeRepository = placeRepository,
+        _eventRepository = eventRepository,
+        _reviewRepository = reviewRepository,
         super(DashboardInitial());
 
   Future<void> loadDashboardStats() async {
@@ -77,6 +77,7 @@ class DashboardCubit extends Cubit<DashboardState> {
       return 0.0;
     }
     // Assuming Review model has a 'rating' field
-    return reviews.map((r) => r.rating).reduce((a, b) => a + b) / reviews.length;
+    return reviews.map((r) => r.rating).reduce((a, b) => a + b) /
+        reviews.length;
   }
 }

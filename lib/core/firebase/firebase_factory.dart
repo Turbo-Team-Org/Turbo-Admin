@@ -1,20 +1,30 @@
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/foundation.dart';
 import '../config/firebase_config.dart';
 
+/// Factory para inicializar Firebase específicamente para Web Admin Panel
 class FirebaseFactory {
   static Future<FirebaseApp> initializeApp() async {
-    if (kIsWeb) {
+    try {
       // Configuración específica para Web Admin Panel
       return await Firebase.initializeApp(
         options: FirebaseConfig.webOptions,
       );
-    } else {
-      // Para móvil usa firebase_options.dart generado por FlutterFire CLI
-      // Este archivo se genera automáticamente y maneja iOS/Android
-      // Importa: import 'firebase_options.dart';
-      // return await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-      return await Firebase.initializeApp();
+    } catch (e) {
+      // Si Firebase ya está inicializado, devolver la instancia existente
+      if (e.toString().contains('already exists')) {
+        return Firebase.app();
+      }
+      rethrow;
+    }
+  }
+
+  /// Verifica si Firebase está inicializado
+  static bool get isInitialized {
+    try {
+      Firebase.app();
+      return true;
+    } catch (e) {
+      return false;
     }
   }
 }

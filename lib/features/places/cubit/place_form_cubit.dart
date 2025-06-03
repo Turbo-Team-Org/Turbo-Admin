@@ -36,12 +36,10 @@ class PlaceFormCubit extends Cubit<PlaceFormState> {
   final CategoryRepository _categoryRepository;
 
   PlaceFormCubit({
-    PlaceRepository? placeRepository,
-    CategoryRepository? categoryRepository,
-    PlaceService? placeService,
-  })  : _placeRepository = placeRepository ?? GetIt.instance<PlaceRepository>(),
-        _categoryRepository =
-            categoryRepository ?? GetIt.instance<CategoryRepository>(),
+    required PlaceRepository placeRepository,
+    required CategoryRepository categoryRepository,
+  })  : _placeRepository = placeRepository,
+        _categoryRepository = categoryRepository,
         super(PlaceFormInitial());
 
   Future<void> loadForm({String? placeId}) async {

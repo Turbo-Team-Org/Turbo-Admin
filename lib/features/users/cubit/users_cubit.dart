@@ -31,9 +31,8 @@ class UsersCubit extends Cubit<UsersState> {
   final AuthenticationRepository _userRepository;
 
   UsersCubit({
-    AuthenticationRepository? userRepository,
-  })  : _userRepository =
-            userRepository ?? GetIt.instance<AuthenticationRepository>(),
+    required AuthenticationRepository userRepository,
+  })  : _userRepository = userRepository,
         super(UsersInitial());
 /*
   Future<void> loadUsers({

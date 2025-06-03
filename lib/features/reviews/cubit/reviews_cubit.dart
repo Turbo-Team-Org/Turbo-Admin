@@ -30,15 +30,11 @@ class ReviewsError extends ReviewsState {
 // --- Reviews Cubit ---
 class ReviewsCubit extends Cubit<ReviewsState> {
   final ReviewRepository _reviewRepository;
-  final ReviewService
-      _reviewService; // For actions like delete or status change
+  // For actions like delete or status change
 
   ReviewsCubit({
-    ReviewRepository? reviewRepository,
-    ReviewService? reviewService,
-  })  : _reviewRepository =
-            reviewRepository ?? GetIt.instance<ReviewRepository>(),
-        _reviewService = reviewService ?? GetIt.instance<ReviewService>(),
+    required ReviewRepository reviewRepository,
+  })  : _reviewRepository = reviewRepository,
         super(ReviewsInitial());
 
   Future<void> loadReviews({
@@ -95,7 +91,7 @@ class ReviewsCubit extends Cubit<ReviewsState> {
 
   Future<void> deleteReview(String reviewId) async {
     try {
-      await _reviewService.deleteReview(reviewId);
+      await _reviewRepository.deleteReview(reviewId);
       // Refresh the list. Consider current filters if any.
       // For simplicity, just calling loadReviews() which might reset to default filters.
       // A more sophisticated approach would re-load with the last used filters.
@@ -112,7 +108,7 @@ class ReviewsCubit extends Cubit<ReviewsState> {
   ) async {
     try {
       // Assuming ReviewService has a method to update status
-      await _reviewService.updateReviewStatus(reviewId, newStatus);
+      await _reviewRepository.updateReviewStatus(reviewId, newStatus);
       // Refresh reviews to reflect the change
       await loadReviews(); // Or update the specific review in the list locally
     } catch (e) {

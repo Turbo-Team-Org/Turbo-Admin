@@ -32,10 +32,8 @@ class CategoriesCubit extends Cubit<CategoriesState> {
   final CategoryRepository _categoryRepository;
 
   CategoriesCubit({
-    CategoryRepository? categoryRepository,
-    CategoryService? categoryService,
-  })  : _categoryRepository =
-            categoryRepository ?? GetIt.instance<CategoryRepository>(),
+    required categoryRepository,
+  })  : _categoryRepository = categoryRepository,
         super(CategoriesInitial());
 
   Future<void> loadCategories({int page = 1 /* if paginated */}) async {

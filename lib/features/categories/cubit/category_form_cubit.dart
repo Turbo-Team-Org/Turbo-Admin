@@ -13,7 +13,7 @@ class CategoryFormLoading extends CategoryFormState {}
 class CategoryFormLoaded extends CategoryFormState {
   final Category? category; // null for create, Category for edit
   // Potentially parent categories if you have nested categories
-  // final List<Category> parentCategories; 
+  // final List<Category> parentCategories;
 
   CategoryFormLoaded({
     this.category,
@@ -36,14 +36,11 @@ class CategoryFormError extends CategoryFormState {
 // --- CategoryForm Cubit ---
 class CategoryFormCubit extends Cubit<CategoryFormState> {
   final CategoryRepository _categoryRepository;
-  final CategoryService _categoryService;
 
   CategoryFormCubit({
-    CategoryRepository? categoryRepository,
-    CategoryService? categoryService,
-  }) : _categoryRepository = categoryRepository ?? GetIt.instance<CategoryRepository>(),
-       _categoryService = categoryService ?? GetIt.instance<CategoryService>(),
-       super(CategoryFormInitial());
+    required CategoryRepository categoryRepository,
+  })  : _categoryRepository = categoryRepository,
+        super(CategoryFormInitial());
 
   Future<void> loadForm({String? categoryId}) async {
     emit(CategoryFormLoading());
@@ -69,9 +66,9 @@ class CategoryFormCubit extends Cubit<CategoryFormState> {
       bool isNewCategory = category.id.isEmpty;
       if (isNewCategory) {
         // Ensure category.id is handled by service or repository if it's auto-generated
-        await _categoryService.addCategory(category);
+        await _categoryRepository.addCategory(category);
       } else {
-        await _categoryService.updateCategory(category);
+        await _categoryRepository.updateCategory(category);
       }
       emit(CategoryFormSuccess(isNewCategory: isNewCategory));
     } catch (e) {

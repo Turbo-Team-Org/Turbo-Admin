@@ -34,11 +34,10 @@ class EventFormCubit extends Cubit<EventFormState> {
   final PlaceRepository _placeRepository; // To fetch places for selection
 
   EventFormCubit({
-    EventRepository? eventRepository,
-    PlaceRepository? placeRepository,
-    EventService? eventService,
-  })  : _eventRepository = eventRepository ?? GetIt.instance<EventRepository>(),
-        _placeRepository = placeRepository ?? GetIt.instance<PlaceRepository>(),
+    required EventRepository eventRepository,
+    required PlaceRepository placeRepository,
+  })  : _eventRepository = eventRepository,
+        _placeRepository = placeRepository,
         super(EventFormInitial());
 
   Future<void> loadForm({String? eventId}) async {

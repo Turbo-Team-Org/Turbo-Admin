@@ -1,66 +1,249 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:turbo_admin/features/dashboard/pages/dashboard_page.dart'; // Placeholder
-import 'package:turbo_admin/features/places/pages/places_page.dart'; // Placeholder
-import 'package:turbo_admin/features/places/pages/place_form_page.dart';
-import 'package:turbo_admin/features/events/pages/events_page.dart'; // Placeholder
-import 'package:turbo_admin/features/events/pages/event_form_page.dart';
-import 'package:turbo_admin/features/reviews/pages/reviews_page.dart'; // Placeholder
-import 'package:turbo_admin/features/reviews/pages/review_moderation_page.dart';
-import 'package:turbo_admin/features/categories/pages/categories_page.dart'; // Placeholder
-import 'package:turbo_admin/features/categories/pages/category_form_page.dart';
-import 'package:turbo_admin/features/users/pages/users_page.dart'; // Placeholder
-import 'package:turbo_admin/features/users/pages/user_management_page.dart';
-// Import other pages as they are created (e.g., DashboardPage, SettingsPage)
-// For AdminScaffold to know the current selection, we might need a wrapper or pass it down.
+import 'package:get_it/get_it.dart';
+import 'package:turbo_admin/features/auth/cubit/admin_auth_cubit.dart';
 
-import 'package:turbo_admin/core/widgets/admin_scaffold.dart';
+// Dashboard
+import 'package:turbo_admin/features/dashboard/pages/dashboard_page.dart';
+
+// Places
+import 'package:turbo_admin/features/places/pages/places_page.dart';
+import 'package:turbo_admin/features/places/pages/place_form_page.dart';
+
+// Events
+import 'package:turbo_admin/features/events/pages/events_page.dart';
+import 'package:turbo_admin/features/events/pages/event_form_page.dart';
+
+// Reviews
+import 'package:turbo_admin/features/reviews/pages/reviews_page.dart';
+import 'package:turbo_admin/features/reviews/pages/review_moderation_page.dart';
+
+// Categories
+import 'package:turbo_admin/features/categories/pages/categories_page.dart';
+import 'package:turbo_admin/features/categories/pages/category_form_page.dart';
+
+// Users
+import 'package:turbo_admin/features/users/pages/users_page.dart';
+import 'package:turbo_admin/features/users/pages/user_management_page.dart';
+
+// Diagnostics
+import 'package:turbo_admin/features/diagnostics/pages/diagnostics_page.dart';
+
+// Auth
+import 'package:turbo_admin/features/auth/pages/login_page.dart';
+import 'package:turbo_admin/features/auth/pages/register_page.dart';
+import 'package:turbo_admin/features/auth/pages/loading_page.dart';
 
 // Simple global key for the router's navigator state, useful for contextless navigation if needed
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 // final GlobalKey<NavigatorState> _shellNavigatorKey = GlobalKey<NavigatorState>(); // If using ShellRoute
 
+/// Verificar estado de autenticación para redirecciones
+String? _handleRedirect(BuildContext context, GoRouterState state) {
+  try {
+    final adminAuthCubit = GetIt.instance<AdminAuthCubit>();
+    final authState = adminAuthCubit.state;
+
+    final currentLocation = state.matchedLocation;
+    final isLoggingIn = currentLocation == '/login';
+    final isRegistering = currentLocation == '/register';
+    final isOnAuthPage = isLoggingIn || isRegistering;
+
+    // Debug logging
+    print('🔄 Router redirect check:');
+    print('   Current location: $currentLocation');
+    print('   Auth state: ${authState.runtimeType}');
+
+    // Estrategia simplificada:
+    // 1. Si está autenticado y en página de auth → dashboard
+    if (authState is AdminAuthAuthenticated && isOnAuthPage) {
+      print('   ✅ Authenticated user on auth page - redirecting to dashboard');
+      return '/dashboard';
+    }
+
+    // 2. Si NO está autenticado y NO está en página de auth → login
+    if ((authState is AdminAuthUnauthenticated ||
+            authState is AdminAuthError) &&
+        !isOnAuthPage) {
+      print(
+          '   ❌ Unauthenticated user not on auth page - redirecting to login');
+      return '/login';
+    }
+
+    // 3. Si es estado inicial, iniciar verificación pero permitir navegación
+    if (authState is AdminAuthInitial) {
+      print('   ⚡ Initial state - triggering checkAuthStatus, no redirect');
+      Future.microtask(() => adminAuthCubit.checkAuthStatus());
+    }
+
+    print('   ➡️  No redirect needed');
+    return null;
+  } catch (e) {
+    print('   💥 Error in redirect: $e');
+    return '/login';
+  }
+}
+
+/// Transición personalizada para navegación principal (entre secciones del sidebar)
+Page<T> _buildPageWithSlideTransition<T extends Object?>(
+  BuildContext context,
+  GoRouterState state,
+  Widget child,
+) {
+  return CustomTransitionPage<T>(
+    key: state.pageKey,
+    child: child,
+    transitionDuration: const Duration(milliseconds: 300),
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      const begin = Offset(1.0, 0.0);
+      const end = Offset.zero;
+      const curve = Curves.easeInOut;
+
+      var tween = Tween(begin: begin, end: end).chain(
+        CurveTween(curve: curve),
+      );
+
+      return SlideTransition(
+        position: animation.drive(tween),
+        child: child,
+      );
+    },
+  );
+}
+
+/// Transición para formularios y modales
+Page<T> _buildPageWithScaleTransition<T extends Object?>(
+  BuildContext context,
+  GoRouterState state,
+  Widget child,
+) {
+  return CustomTransitionPage<T>(
+    key: state.pageKey,
+    child: child,
+    transitionDuration: const Duration(milliseconds: 250),
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      const curve = Curves.easeOutBack;
+
+      var scaleTween = Tween(begin: 0.8, end: 1.0).chain(
+        CurveTween(curve: curve),
+      );
+
+      var fadeTween = Tween(begin: 0.0, end: 1.0).chain(
+        CurveTween(curve: curve),
+      );
+
+      return ScaleTransition(
+        scale: animation.drive(scaleTween),
+        child: FadeTransition(
+          opacity: animation.drive(fadeTween),
+          child: child,
+        ),
+      );
+    },
+  );
+}
+
+/// Transición para páginas de autenticación
+Page<T> _buildPageWithFadeTransition<T extends Object?>(
+  BuildContext context,
+  GoRouterState state,
+  Widget child,
+) {
+  return CustomTransitionPage<T>(
+    key: state.pageKey,
+    child: child,
+    transitionDuration: const Duration(milliseconds: 400),
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      return FadeTransition(
+        opacity: animation,
+        child: child,
+      );
+    },
+  );
+}
+
+/// Router principal de la aplicación
 class AppRouter {
   static final GoRouter router = GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: '/dashboard', // Default route
-    debugLogDiagnostics: true, // Log routing diagnostics for debugging
+    initialLocation: '/dashboard',
+    debugLogDiagnostics: true,
+    redirect: _handleRedirect, // Manejar autenticación a nivel de router
     routes: <RouteBase>[
+/*      // === Auth ===
+      GoRoute(
+        path: '/login',
+        name: 'login',
+        pageBuilder: (context, state) => _buildPageWithFadeTransition(
+          context,
+          state,
+          const LoginPage(),
+        ),
+      ),
+
+      GoRoute(
+        path: '/register',
+        name: 'register',
+        pageBuilder: (context, state) => _buildPageWithFadeTransition(
+          context,
+          state,
+          const RegisterPage(),
+        ),
+      ),
+*/
       // === Dashboard ===
       GoRoute(
         path: '/dashboard',
         name: 'dashboard',
-        builder: (BuildContext context, GoRouterState state) {
-          // Replace with actual DashboardPage when created
-          return const PlaceholderDashboardPage();
-        },
+        pageBuilder: (context, state) => _buildPageWithSlideTransition(
+          context,
+          state,
+          const DashboardPage(),
+        ),
+      ),
+
+      // === Diagnóstico ===
+      GoRoute(
+        path: '/diagnostics',
+        name: 'diagnostics',
+        pageBuilder: (context, state) => _buildPageWithSlideTransition(
+          context,
+          state,
+          const DiagnosticsPage(),
+        ),
       ),
 
       // === Places ===
       GoRoute(
         path: '/places',
         name: 'places',
-        builder: (BuildContext context, GoRouterState state) {
-          // Replace with actual PlacesPage (listing) when created
-          return const PlaceholderPlacesListPage();
-        },
+        pageBuilder: (context, state) => _buildPageWithSlideTransition(
+          context,
+          state,
+          const PlaceholderPlacesListPage(),
+        ),
         routes: <RouteBase>[
           GoRoute(
             path: 'new', //  /places/new
             name: 'newPlace',
-            builder: (BuildContext context, GoRouterState state) {
-              return const PlaceFormPage(); // No placeId means 'create'
-            },
+            pageBuilder: (context, state) => _buildPageWithScaleTransition(
+              context,
+              state,
+              const PlaceFormPage(),
+            ),
           ),
           GoRoute(
             path: ':placeId/edit', // /places/:placeId/edit
             name: 'editPlace',
-            builder: (BuildContext context, GoRouterState state) {
+            pageBuilder: (context, state) {
               final placeId = state.pathParameters['placeId'];
-              return PlaceFormPage(placeId: placeId);
+              return _buildPageWithScaleTransition(
+                context,
+                state,
+                PlaceFormPage(placeId: placeId),
+              );
             },
           ),
-          // Potentially a details page: /places/:placeId
         ],
       ),
 
@@ -68,23 +251,31 @@ class AppRouter {
       GoRoute(
         path: '/events',
         name: 'events',
-        builder: (BuildContext context, GoRouterState state) {
-          return const PlaceholderEventsListPage(); // Replace with actual EventsPage
-        },
+        pageBuilder: (context, state) => _buildPageWithSlideTransition(
+          context,
+          state,
+          const PlaceholderEventsListPage(),
+        ),
         routes: <RouteBase>[
           GoRoute(
             path: 'new',
             name: 'newEvent',
-            builder: (BuildContext context, GoRouterState state) {
-              return const EventFormPage();
-            },
+            pageBuilder: (context, state) => _buildPageWithScaleTransition(
+              context,
+              state,
+              const EventFormPage(),
+            ),
           ),
           GoRoute(
             path: ':eventId/edit',
             name: 'editEvent',
-            builder: (BuildContext context, GoRouterState state) {
+            pageBuilder: (context, state) {
               final eventId = state.pathParameters['eventId'];
-              return EventFormPage(eventId: eventId);
+              return _buildPageWithScaleTransition(
+                context,
+                state,
+                EventFormPage(eventId: eventId),
+              );
             },
           ),
         ],
@@ -94,18 +285,33 @@ class AppRouter {
       GoRoute(
         path: '/reviews',
         name: 'reviews',
-        builder: (BuildContext context, GoRouterState state) {
-          return const PlaceholderReviewsListPage(); // Replace with actual ReviewsPage
-        },
+        pageBuilder: (context, state) => _buildPageWithSlideTransition(
+          context,
+          state,
+          const PlaceholderReviewsListPage(),
+        ),
         routes: <RouteBase>[
           GoRoute(
             path: ':reviewId/moderate',
             name: 'moderateReview',
-            builder: (BuildContext context, GoRouterState state) {
+            pageBuilder: (context, state) {
               final reviewId = state.pathParameters['reviewId'];
-              if (reviewId == null)
-                return const Text("Error: Review ID missing"); // Or redirect
-              return ReviewModerationPage(reviewId: reviewId);
+              if (reviewId == null) {
+                return _buildPageWithFadeTransition(
+                  context,
+                  state,
+                  const Scaffold(
+                    body: Center(
+                      child: Text("Error: Review ID missing"),
+                    ),
+                  ),
+                );
+              }
+              return _buildPageWithScaleTransition(
+                context,
+                state,
+                ReviewModerationPage(reviewId: reviewId),
+              );
             },
           ),
         ],
@@ -115,23 +321,31 @@ class AppRouter {
       GoRoute(
         path: '/categories',
         name: 'categories',
-        builder: (BuildContext context, GoRouterState state) {
-          return const PlaceholderCategoriesListPage(); // Replace with actual CategoriesPage
-        },
+        pageBuilder: (context, state) => _buildPageWithSlideTransition(
+          context,
+          state,
+          const PlaceholderCategoriesListPage(),
+        ),
         routes: <RouteBase>[
           GoRoute(
             path: 'new',
             name: 'newCategory',
-            builder: (BuildContext context, GoRouterState state) {
-              return const CategoryFormPage();
-            },
+            pageBuilder: (context, state) => _buildPageWithScaleTransition(
+              context,
+              state,
+              const CategoryFormPage(),
+            ),
           ),
           GoRoute(
             path: ':categoryId/edit',
             name: 'editCategory',
-            builder: (BuildContext context, GoRouterState state) {
+            pageBuilder: (context, state) {
               final categoryId = state.pathParameters['categoryId'];
-              return CategoryFormPage(categoryId: categoryId);
+              return _buildPageWithScaleTransition(
+                context,
+                state,
+                CategoryFormPage(categoryId: categoryId),
+              );
             },
           ),
         ],
@@ -141,18 +355,33 @@ class AppRouter {
       GoRoute(
         path: '/users',
         name: 'users',
-        builder: (BuildContext context, GoRouterState state) {
-          return const PlaceholderUsersListPage(); // Replace with actual UsersPage
-        },
+        pageBuilder: (context, state) => _buildPageWithSlideTransition(
+          context,
+          state,
+          const PlaceholderUsersListPage(),
+        ),
         routes: <RouteBase>[
           GoRoute(
-            path: ':userId/manage', // /users/:userId/manage
+            path: ':userId/manage',
             name: 'manageUser',
-            builder: (BuildContext context, GoRouterState state) {
+            pageBuilder: (context, state) {
               final userId = state.pathParameters['userId'];
-              if (userId == null)
-                return const Text("Error: User ID missing"); // Or redirect
-              return UserManagementPage(userId: userId);
+              if (userId == null) {
+                return _buildPageWithFadeTransition(
+                  context,
+                  state,
+                  const Scaffold(
+                    body: Center(
+                      child: Text("Error: User ID missing"),
+                    ),
+                  ),
+                );
+              }
+              return _buildPageWithScaleTransition(
+                context,
+                state,
+                UserManagementPage(userId: userId),
+              );
             },
           ),
           // No 'new' user route as user creation is typically via Firebase Auth or other services, not direct admin forms.
@@ -172,130 +401,4 @@ class AppRouter {
   );
 }
 
-// Placeholder Pages (to be replaced with actual implementations later)
-// These are temporary until the actual list pages are created.
-class PlaceholderDashboardPage extends StatelessWidget {
-  const PlaceholderDashboardPage({super.key});
-
-  @override
-  Widget build(BuildContext context) => const AdminScaffold(
-        title: "Dashboard",
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.dashboard, size: 64, color: Colors.grey),
-              SizedBox(height: 16),
-              Text("Dashboard Page", style: TextStyle(fontSize: 24)),
-              SizedBox(height: 8),
-              Text("Aquí irán las métricas y estadísticas principales"),
-            ],
-          ),
-        ),
-      );
-}
-
-class PlaceholderPlacesListPage extends StatelessWidget {
-  const PlaceholderPlacesListPage({super.key});
-
-  @override
-  Widget build(BuildContext context) => const AdminScaffold(
-        title: "Gestión de Lugares",
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.place, size: 64, color: Colors.grey),
-              SizedBox(height: 16),
-              Text("Lista de Lugares", style: TextStyle(fontSize: 24)),
-              SizedBox(height: 8),
-              Text("Aquí se mostrarán todos los lugares registrados"),
-            ],
-          ),
-        ),
-      );
-}
-
-class PlaceholderEventsListPage extends StatelessWidget {
-  const PlaceholderEventsListPage({super.key});
-
-  @override
-  Widget build(BuildContext context) => const AdminScaffold(
-        title: "Gestión de Eventos",
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.event, size: 64, color: Colors.grey),
-              SizedBox(height: 16),
-              Text("Lista de Eventos", style: TextStyle(fontSize: 24)),
-              SizedBox(height: 8),
-              Text("Aquí se mostrarán todos los eventos programados"),
-            ],
-          ),
-        ),
-      );
-}
-
-class PlaceholderReviewsListPage extends StatelessWidget {
-  const PlaceholderReviewsListPage({super.key});
-
-  @override
-  Widget build(BuildContext context) => const AdminScaffold(
-        title: "Moderación de Reseñas",
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.reviews, size: 64, color: Colors.grey),
-              SizedBox(height: 16),
-              Text("Lista de Reseñas", style: TextStyle(fontSize: 24)),
-              SizedBox(height: 8),
-              Text("Aquí se moderarán las reseñas de usuarios"),
-            ],
-          ),
-        ),
-      );
-}
-
-class PlaceholderCategoriesListPage extends StatelessWidget {
-  const PlaceholderCategoriesListPage({super.key});
-
-  @override
-  Widget build(BuildContext context) => const AdminScaffold(
-        title: "Gestión de Categorías",
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.category, size: 64, color: Colors.grey),
-              SizedBox(height: 16),
-              Text("Lista de Categorías", style: TextStyle(fontSize: 24)),
-              SizedBox(height: 8),
-              Text("Aquí se gestionarán las categorías de lugares"),
-            ],
-          ),
-        ),
-      );
-}
-
-class PlaceholderUsersListPage extends StatelessWidget {
-  const PlaceholderUsersListPage({super.key});
-
-  @override
-  Widget build(BuildContext context) => const AdminScaffold(
-        title: "Gestión de Usuarios",
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.people, size: 64, color: Colors.grey),
-              SizedBox(height: 16),
-              Text("Lista de Usuarios", style: TextStyle(fontSize: 24)),
-              SizedBox(height: 8),
-              Text("Aquí se gestionarán los usuarios de la aplicación"),
-            ],
-          ),
-        ),
-      );
-}
+// Las páginas reales están implementadas en sus respectivos features con BLoC pattern

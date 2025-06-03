@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <!--
+  <head>
+    <!--
     If you are serving your web app in a path other than the root, change the
     href value below to reflect the base path you are serving from.
 
@@ -14,25 +14,349 @@
     This is a placeholder for base href that will be replaced by the value of
     the `--base-href` argument provided to `flutter build`.
   -->
-  <base href="$FLUTTER_BASE_HREF">
+    <base href="$FLUTTER_BASE_HREF" />
 
-  <meta charset="UTF-8">
-  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+    <meta charset="UTF-8" />
+    <meta content="IE=Edge" http-equiv="X-UA-Compatible" />
+    <meta
+      name="description"
+      content="Turbo Admin Panel - Gestión administrativa para la plataforma Turbo"
+    />
 
-  <!-- iOS meta tags & icons -->
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="turbo_admin">
-  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+    <!-- iOS meta tags & icons -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-mobile-web-app-title" content="Turbo Admin" />
+    <link rel="apple-touch-icon" href="icons/Icon-192.png" />
 
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png"/>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="favicon.png" />
 
-  <title>turbo_admin</title>
-  <link rel="manifest" href="manifest.json">
-</head>
-<body>
-  <script src="flutter_bootstrap.js" async></script>
-</body>
+    <title>Turbo Admin Panel</title>
+    <link rel="manifest" href="manifest.json" />
+
+    <!-- Fuente MuseoSans -->
+    <style>
+      @font-face {
+        font-family: "MuseoSans";
+        src: url("assets/fonts/exljbris - MuseoSans-300.otf") format("opentype");
+        font-weight: 300;
+      }
+      @font-face {
+        font-family: "MuseoSans";
+        src: url("assets/fonts/exljbris - MuseoSans-500.otf") format("opentype");
+        font-weight: 500;
+      }
+      @font-face {
+        font-family: "MuseoSans";
+        src: url("assets/fonts/exljbris - MuseoSans-700.otf") format("opentype");
+        font-weight: 700;
+      }
+      @font-face {
+        font-family: "MuseoSans";
+        src: url("assets/fonts/exljbris - MuseoSans-900.otf") format("opentype");
+        font-weight: 900;
+      }
+
+      /* Splash Screen con branding de Turbo */
+      .loading-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        font-family: "MuseoSans", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Roboto, sans-serif;
+      }
+
+      .turbo-logo-container {
+        position: relative;
+        margin-bottom: 40px;
+        animation: logoFloat 3s ease-in-out infinite;
+      }
+
+      .turbo-logo {
+        width: 160px;
+        height: 118px;
+        filter: drop-shadow(0 10px 30px rgba(229, 62, 62, 0.2));
+      }
+
+      .loading-title {
+        color: #111827;
+        font-family: "MuseoSans", sans-serif;
+        font-size: 32px;
+        font-weight: 700;
+        margin-bottom: 12px;
+        background: linear-gradient(135deg, #e53e3e, #ff6b35);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-align: center;
+      }
+
+      .loading-subtitle {
+        color: #6b7280;
+        font-family: "MuseoSans", sans-serif;
+        font-size: 16px;
+        font-weight: 300;
+        margin-bottom: 48px;
+        text-align: center;
+        max-width: 400px;
+        line-height: 1.5;
+      }
+
+      .loading-progress {
+        width: 240px;
+        height: 4px;
+        background: #e5e7eb;
+        border-radius: 2px;
+        overflow: hidden;
+        margin-bottom: 24px;
+      }
+
+      .loading-progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, #e53e3e, #ff6b35);
+        border-radius: 2px;
+        animation: progressAnimation 2s ease-in-out infinite;
+      }
+
+      .loading-status {
+        color: #9ca3af;
+        font-family: "MuseoSans", sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        text-align: center;
+        animation: statusPulse 1.5s ease-in-out infinite;
+      }
+
+      /* Animaciones */
+      @keyframes logoFloat {
+        0%,
+        100% {
+          transform: translateY(0px);
+        }
+        50% {
+          transform: translateY(-10px);
+        }
+      }
+
+      @keyframes progressAnimation {
+        0% {
+          width: 0%;
+          transform: translateX(-100%);
+        }
+        50% {
+          width: 100%;
+          transform: translateX(0%);
+        }
+        100% {
+          width: 100%;
+          transform: translateX(100%);
+        }
+      }
+
+      @keyframes statusPulse {
+        0%,
+        100% {
+          opacity: 0.7;
+        }
+        50% {
+          opacity: 1;
+        }
+      }
+
+      /* Efecto de partículas de fondo */
+      .particles {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        z-index: -1;
+      }
+
+      .particle {
+        position: absolute;
+        width: 4px;
+        height: 4px;
+        background: linear-gradient(45deg, #e53e3e, #ff6b35);
+        border-radius: 50%;
+        animation: particleFloat 6s ease-in-out infinite;
+        opacity: 0.3;
+      }
+
+      @keyframes particleFloat {
+        0%,
+        100% {
+          transform: translateY(0px) rotate(0deg);
+          opacity: 0.3;
+        }
+        50% {
+          transform: translateY(-20px) rotate(180deg);
+          opacity: 0.6;
+        }
+      }
+
+      /* Responsive */
+      @media (max-width: 768px) {
+        .turbo-logo {
+          width: 120px;
+          height: 88px;
+        }
+
+        .loading-title {
+          font-size: 28px;
+        }
+
+        .loading-subtitle {
+          font-size: 14px;
+          padding: 0 20px;
+        }
+
+        .loading-progress {
+          width: 200px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Splash Screen con branding de Turbo -->
+    <div id="loading" class="loading-container">
+      <!-- Partículas de fondo -->
+      <div class="particles">
+        <div class="particle" style="left: 10%; animation-delay: 0s"></div>
+        <div class="particle" style="left: 20%; animation-delay: 1s"></div>
+        <div class="particle" style="left: 30%; animation-delay: 2s"></div>
+        <div class="particle" style="left: 40%; animation-delay: 0.5s"></div>
+        <div class="particle" style="left: 50%; animation-delay: 1.5s"></div>
+        <div class="particle" style="left: 60%; animation-delay: 2.5s"></div>
+        <div class="particle" style="left: 70%; animation-delay: 0.8s"></div>
+        <div class="particle" style="left: 80%; animation-delay: 1.8s"></div>
+        <div class="particle" style="left: 90%; animation-delay: 2.8s"></div>
+      </div>
+
+      <!-- Logo oficial de Turbo -->
+      <div class="turbo-logo-container">
+        <svg
+          class="turbo-logo"
+          viewBox="0 0 375 275"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <defs>
+            <linearGradient
+              id="turboGradient"
+              x1="0%"
+              y1="0%"
+              x2="100%"
+              y2="100%"
+            >
+              <stop offset="0%" style="stop-color: #e53e3e; stop-opacity: 1" />
+              <stop
+                offset="100%"
+                style="stop-color: #ff6b35; stop-opacity: 1"
+              />
+            </linearGradient>
+          </defs>
+          <path
+            fill="url(#turboGradient)"
+            d="M221.8,16.79c-42.79,0-82.28,22.83-103.67,59.88L13.25,258.21h140.49c42.49,0,81.76-22.67,103-59.48L361.75,16.79h-139.94Z"
+          />
+          <path
+            fill="#f5f5f7"
+            d="M275.77,74.78l-18.11,31.35h0c-22.41,0-43.12,11.96-54.33,31.37l-36.22,62.73h-36.22l54.32-94.09h-36.22l18.11-31.35h108.65Z"
+          />
+        </svg>
+      </div>
+
+      <!-- Título y subtítulo -->
+      <div class="loading-title">Panel de Administración</div>
+      <div class="loading-subtitle">
+        Gestiona lugares, eventos y usuarios de la plataforma Turbo
+      </div>
+
+      <!-- Barra de progreso -->
+      <div class="loading-progress">
+        <div class="loading-progress-bar"></div>
+      </div>
+
+      <!-- Estado de carga -->
+      <div class="loading-status" id="loadingStatus">
+        Inicializando servicios...
+      </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-analytics-compat.js"></script>
+
+    <!-- Firebase Configuration -->
+    <script>
+      // Firebase configuration for Turbo Admin Panel
+      const firebaseConfig = {
+        apiKey: "AIzaSyAVutR13I58yvzsHjV5ZLtS9pHfe4cLsJ8",
+        authDomain: "turbo-16770.firebaseapp.com",
+        projectId: "turbo-16770",
+        storageBucket: "turbo-16770.firebasestorage.app",
+        messagingSenderId: "626963970726",
+        appId: "1:626963970726:web:b87ea452393d72655a1267",
+        measurementId: "G-E872L0BE36",
+      };
+
+      // Initialize Firebase
+      firebase.initializeApp(firebaseConfig);
+
+      // Initialize Analytics
+      if (firebase.analytics) {
+        firebase.analytics();
+      }
+
+      // Simulación de estados de carga
+      const loadingStates = [
+        "Inicializando servicios...",
+        "Conectando con Firebase...",
+        "Preparando interfaz...",
+        "Casi listo...",
+      ];
+
+      let currentState = 0;
+      const statusElement = document.getElementById("loadingStatus");
+
+      const updateStatus = () => {
+        if (statusElement && currentState < loadingStates.length) {
+          statusElement.textContent = loadingStates[currentState];
+          currentState++;
+        }
+      };
+
+      // Actualizar estado cada segundo
+      setInterval(updateStatus, 1000);
+    </script>
+
+    <script src="flutter_bootstrap.js" async></script>
+
+    <script>
+      // Hide loading screen when Flutter app is ready
+      window.addEventListener("flutter-first-frame", function () {
+        const loading = document.getElementById("loading");
+        if (loading) {
+          loading.style.opacity = "0";
+          loading.style.transition = "opacity 0.8s ease-out";
+          setTimeout(() => {
+            loading.style.display = "none";
+          }, 800);
+        }
+      });
+    </script>
+  </body>
 </html>

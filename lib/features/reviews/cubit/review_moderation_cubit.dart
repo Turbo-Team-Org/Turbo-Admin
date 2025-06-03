@@ -31,9 +31,8 @@ class ReviewModerationCubit extends Cubit<ReviewModerationState> {
   final ReviewRepository _reviewRepository;
 
   ReviewModerationCubit({
-    ReviewRepository? reviewRepository,
-  })  : _reviewRepository =
-            reviewRepository ?? GetIt.instance<ReviewRepository>(),
+    required reviewRepository,
+  })  : _reviewRepository = reviewRepository,
         super(ReviewModerationInitial());
 
   Future<void> loadReviewForModeration(String reviewId) async {

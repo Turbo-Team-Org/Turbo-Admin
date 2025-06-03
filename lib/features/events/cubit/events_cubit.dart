@@ -33,8 +33,8 @@ class EventsCubit extends Cubit<EventsState> {
   final EventRepository _eventRepository;
 
   EventsCubit({
-    EventRepository? eventRepository,
-  })  : _eventRepository = eventRepository ?? GetIt.instance<EventRepository>(),
+    required EventRepository eventRepository,
+  })  : _eventRepository = eventRepository,
         super(EventsInitial());
 
   Future<void> loadEvents(
