@@ -46,3 +46,5 @@ app.*.map.json
 
 # FVM
 .fvm/flutter_sdk
+
+/app_config/pre.json

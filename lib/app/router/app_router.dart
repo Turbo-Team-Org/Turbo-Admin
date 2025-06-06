@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:get_it/get_it.dart';
 import 'package:turbo_admin/features/auth/cubit/admin_auth_cubit.dart';
+import 'package:turbo_admin/core/widgets/admin_scaffold.dart';
 
 // Dashboard
 import 'package:turbo_admin/features/dashboard/pages/dashboard_page.dart';
@@ -36,7 +38,8 @@ import 'package:turbo_admin/features/auth/pages/loading_page.dart';
 
 // Simple global key for the router's navigator state, useful for contextless navigation if needed
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
-// final GlobalKey<NavigatorState> _shellNavigatorKey = GlobalKey<NavigatorState>(); // If using ShellRoute
+final GlobalKey<NavigatorState> _shellNavigatorKey =
+    GlobalKey<NavigatorState>();
 
 /// Verificar estado de autenticación para redirecciones
 String? _handleRedirect(BuildContext context, GoRouterState state) {
@@ -50,14 +53,19 @@ String? _handleRedirect(BuildContext context, GoRouterState state) {
     final isOnAuthPage = isLoggingIn || isRegistering;
 
     // Debug logging
-    print('🔄 Router redirect check:');
-    print('   Current location: $currentLocation');
-    print('   Auth state: ${authState.runtimeType}');
+    if (kDebugMode) {
+      debugPrint('🔄 Router redirect check:');
+      debugPrint('   Current location: $currentLocation');
+      debugPrint('   Auth state: ${authState.runtimeType}');
+    }
 
     // Estrategia simplificada:
     // 1. Si está autenticado y en página de auth → dashboard
     if (authState is AdminAuthAuthenticated && isOnAuthPage) {
-      print('   ✅ Authenticated user on auth page - redirecting to dashboard');
+      if (kDebugMode) {
+        debugPrint(
+            '   ✅ Authenticated user on auth page - redirecting to dashboard');
+      }
       return '/dashboard';
     }
 
@@ -65,21 +73,30 @@ String? _handleRedirect(BuildContext context, GoRouterState state) {
     if ((authState is AdminAuthUnauthenticated ||
             authState is AdminAuthError) &&
         !isOnAuthPage) {
-      print(
-          '   ❌ Unauthenticated user not on auth page - redirecting to login');
+      if (kDebugMode) {
+        debugPrint(
+            '   ❌ Unauthenticated user not on auth page - redirecting to login');
+      }
       return '/login';
     }
 
     // 3. Si es estado inicial, iniciar verificación pero permitir navegación
     if (authState is AdminAuthInitial) {
-      print('   ⚡ Initial state - triggering checkAuthStatus, no redirect');
+      if (kDebugMode) {
+        debugPrint(
+            '   ⚡ Initial state - triggering checkAuthStatus, no redirect');
+      }
       Future.microtask(() => adminAuthCubit.checkAuthStatus());
     }
 
-    print('   ➡️  No redirect needed');
+    if (kDebugMode) {
+      debugPrint('   ➡️  No redirect needed');
+    }
     return null;
   } catch (e) {
-    print('   💥 Error in redirect: $e');
+    if (kDebugMode) {
+      debugPrint('   💥 Error in redirect: $e');
+    }
     return '/login';
   }
 }
@@ -166,11 +183,11 @@ Page<T> _buildPageWithFadeTransition<T extends Object?>(
 class AppRouter {
   static final GoRouter router = GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: '/dashboard',
+    initialLocation: '/login',
     debugLogDiagnostics: true,
-    redirect: _handleRedirect, // Manejar autenticación a nivel de router
+    redirect: _handleRedirect,
     routes: <RouteBase>[
-/*      // === Auth ===
+      // === Auth Routes ===
       GoRoute(
         path: '/login',
         name: 'login',
@@ -190,215 +207,252 @@ class AppRouter {
           const RegisterPage(),
         ),
       ),
-*/
-      // === Dashboard ===
-      GoRoute(
-        path: '/dashboard',
-        name: 'dashboard',
-        pageBuilder: (context, state) => _buildPageWithSlideTransition(
-          context,
-          state,
-          const DashboardPage(),
-        ),
-      ),
 
-      // === Diagnóstico ===
-      GoRoute(
-        path: '/diagnostics',
-        name: 'diagnostics',
-        pageBuilder: (context, state) => _buildPageWithSlideTransition(
-          context,
-          state,
-          const DiagnosticsPage(),
-        ),
-      ),
-
-      // === Places ===
-      GoRoute(
-        path: '/places',
-        name: 'places',
-        pageBuilder: (context, state) => _buildPageWithSlideTransition(
-          context,
-          state,
-          const PlaceholderPlacesListPage(),
-        ),
-        routes: <RouteBase>[
+      // === Main Shell Route ===
+      ShellRoute(
+        navigatorKey: _shellNavigatorKey,
+        builder: (context, state, child) {
+          return AdminScaffold(
+            title: _getTitleFromRoute(state),
+            body: child,
+          );
+        },
+        routes: [
+          // === Dashboard ===
           GoRoute(
-            path: 'new', //  /places/new
-            name: 'newPlace',
-            pageBuilder: (context, state) => _buildPageWithScaleTransition(
+            path: '/dashboard',
+            name: 'dashboard',
+            pageBuilder: (context, state) => _buildPageWithSlideTransition(
               context,
               state,
-              const PlaceFormPage(),
+              const DashboardPage(),
             ),
           ),
-          GoRoute(
-            path: ':placeId/edit', // /places/:placeId/edit
-            name: 'editPlace',
-            pageBuilder: (context, state) {
-              final placeId = state.pathParameters['placeId'];
-              return _buildPageWithScaleTransition(
-                context,
-                state,
-                PlaceFormPage(placeId: placeId),
-              );
-            },
-          ),
-        ],
-      ),
 
-      // === Events ===
-      GoRoute(
-        path: '/events',
-        name: 'events',
-        pageBuilder: (context, state) => _buildPageWithSlideTransition(
-          context,
-          state,
-          const PlaceholderEventsListPage(),
-        ),
-        routes: <RouteBase>[
+          // === Diagnóstico ===
           GoRoute(
-            path: 'new',
-            name: 'newEvent',
-            pageBuilder: (context, state) => _buildPageWithScaleTransition(
+            path: '/diagnostics',
+            name: 'diagnostics',
+            pageBuilder: (context, state) => _buildPageWithSlideTransition(
               context,
               state,
-              const EventFormPage(),
+              const DiagnosticsPage(),
             ),
           ),
-          GoRoute(
-            path: ':eventId/edit',
-            name: 'editEvent',
-            pageBuilder: (context, state) {
-              final eventId = state.pathParameters['eventId'];
-              return _buildPageWithScaleTransition(
-                context,
-                state,
-                EventFormPage(eventId: eventId),
-              );
-            },
-          ),
-        ],
-      ),
 
-      // === Reviews ===
-      GoRoute(
-        path: '/reviews',
-        name: 'reviews',
-        pageBuilder: (context, state) => _buildPageWithSlideTransition(
-          context,
-          state,
-          const PlaceholderReviewsListPage(),
-        ),
-        routes: <RouteBase>[
+          // === Places ===
           GoRoute(
-            path: ':reviewId/moderate',
-            name: 'moderateReview',
-            pageBuilder: (context, state) {
-              final reviewId = state.pathParameters['reviewId'];
-              if (reviewId == null) {
-                return _buildPageWithFadeTransition(
+            path: '/places',
+            name: 'places',
+            pageBuilder: (context, state) => _buildPageWithSlideTransition(
+              context,
+              state,
+              const PlaceholderPlacesListPage(),
+            ),
+            routes: <RouteBase>[
+              GoRoute(
+                path: 'new',
+                name: 'newPlace',
+                pageBuilder: (context, state) => _buildPageWithScaleTransition(
                   context,
                   state,
-                  const Scaffold(
-                    body: Center(
-                      child: Text("Error: Review ID missing"),
-                    ),
-                  ),
-                );
-              }
-              return _buildPageWithScaleTransition(
-                context,
-                state,
-                ReviewModerationPage(reviewId: reviewId),
-              );
-            },
+                  const PlaceFormPage(),
+                ),
+              ),
+              GoRoute(
+                path: ':placeId/edit',
+                name: 'editPlace',
+                pageBuilder: (context, state) {
+                  final placeId = state.pathParameters['placeId'];
+                  return _buildPageWithScaleTransition(
+                    context,
+                    state,
+                    PlaceFormPage(placeId: placeId),
+                  );
+                },
+              ),
+            ],
           ),
-        ],
-      ),
 
-      // === Categories ===
-      GoRoute(
-        path: '/categories',
-        name: 'categories',
-        pageBuilder: (context, state) => _buildPageWithSlideTransition(
-          context,
-          state,
-          const PlaceholderCategoriesListPage(),
-        ),
-        routes: <RouteBase>[
+          // === Events ===
           GoRoute(
-            path: 'new',
-            name: 'newCategory',
-            pageBuilder: (context, state) => _buildPageWithScaleTransition(
+            path: '/events',
+            name: 'events',
+            pageBuilder: (context, state) => _buildPageWithSlideTransition(
               context,
               state,
-              const CategoryFormPage(),
+              const PlaceholderEventsListPage(),
             ),
-          ),
-          GoRoute(
-            path: ':categoryId/edit',
-            name: 'editCategory',
-            pageBuilder: (context, state) {
-              final categoryId = state.pathParameters['categoryId'];
-              return _buildPageWithScaleTransition(
-                context,
-                state,
-                CategoryFormPage(categoryId: categoryId),
-              );
-            },
-          ),
-        ],
-      ),
-
-      // === Users ===
-      GoRoute(
-        path: '/users',
-        name: 'users',
-        pageBuilder: (context, state) => _buildPageWithSlideTransition(
-          context,
-          state,
-          const PlaceholderUsersListPage(),
-        ),
-        routes: <RouteBase>[
-          GoRoute(
-            path: ':userId/manage',
-            name: 'manageUser',
-            pageBuilder: (context, state) {
-              final userId = state.pathParameters['userId'];
-              if (userId == null) {
-                return _buildPageWithFadeTransition(
+            routes: <RouteBase>[
+              GoRoute(
+                path: 'new',
+                name: 'newEvent',
+                pageBuilder: (context, state) => _buildPageWithScaleTransition(
                   context,
                   state,
-                  const Scaffold(
-                    body: Center(
-                      child: Text("Error: User ID missing"),
-                    ),
-                  ),
-                );
-              }
-              return _buildPageWithScaleTransition(
-                context,
-                state,
-                UserManagementPage(userId: userId),
-              );
-            },
+                  const EventFormPage(),
+                ),
+              ),
+              GoRoute(
+                path: ':eventId/edit',
+                name: 'editEvent',
+                pageBuilder: (context, state) {
+                  final eventId = state.pathParameters['eventId'];
+                  return _buildPageWithScaleTransition(
+                    context,
+                    state,
+                    EventFormPage(eventId: eventId),
+                  );
+                },
+              ),
+            ],
           ),
-          // No 'new' user route as user creation is typically via Firebase Auth or other services, not direct admin forms.
+
+          // === Reviews ===
+          GoRoute(
+            path: '/reviews',
+            name: 'reviews',
+            pageBuilder: (context, state) => _buildPageWithSlideTransition(
+              context,
+              state,
+              const PlaceholderReviewsListPage(),
+            ),
+            routes: <RouteBase>[
+              GoRoute(
+                path: ':reviewId/moderate',
+                name: 'moderateReview',
+                pageBuilder: (context, state) {
+                  final reviewId = state.pathParameters['reviewId'];
+                  if (reviewId == null) {
+                    return _buildPageWithFadeTransition(
+                      context,
+                      state,
+                      const Scaffold(
+                        body: Center(
+                          child: Text("Error: Review ID missing"),
+                        ),
+                      ),
+                    );
+                  }
+                  return _buildPageWithScaleTransition(
+                    context,
+                    state,
+                    ReviewModerationPage(reviewId: reviewId),
+                  );
+                },
+              ),
+            ],
+          ),
+
+          // === Categories ===
+          GoRoute(
+            path: '/categories',
+            name: 'categories',
+            pageBuilder: (context, state) => _buildPageWithSlideTransition(
+              context,
+              state,
+              const PlaceholderCategoriesListPage(),
+            ),
+            routes: <RouteBase>[
+              GoRoute(
+                path: 'new',
+                name: 'newCategory',
+                pageBuilder: (context, state) => _buildPageWithScaleTransition(
+                  context,
+                  state,
+                  const CategoryFormPage(),
+                ),
+              ),
+              GoRoute(
+                path: ':categoryId/edit',
+                name: 'editCategory',
+                pageBuilder: (context, state) {
+                  final categoryId = state.pathParameters['categoryId'];
+                  return _buildPageWithScaleTransition(
+                    context,
+                    state,
+                    CategoryFormPage(categoryId: categoryId),
+                  );
+                },
+              ),
+            ],
+          ),
+
+          // === Users ===
+          GoRoute(
+            path: '/users',
+            name: 'users',
+            pageBuilder: (context, state) => _buildPageWithSlideTransition(
+              context,
+              state,
+              const PlaceholderUsersListPage(),
+            ),
+            routes: <RouteBase>[
+              GoRoute(
+                path: ':userId/manage',
+                name: 'manageUser',
+                pageBuilder: (context, state) {
+                  final userId = state.pathParameters['userId'];
+                  if (userId == null) {
+                    return _buildPageWithFadeTransition(
+                      context,
+                      state,
+                      const Scaffold(
+                        body: Center(
+                          child: Text("Error: User ID missing"),
+                        ),
+                      ),
+                    );
+                  }
+                  return _buildPageWithScaleTransition(
+                    context,
+                    state,
+                    UserManagementPage(userId: userId),
+                  );
+                },
+              ),
+              // No 'new' user route as user creation is typically via Firebase Auth or other services, not direct admin forms.
+            ],
+          ),
         ],
       ),
-
-      // TODO: Add other routes (Settings, Profile, etc.)
-      // TODO: Implement ShellRoute with AdminScaffold if a persistent navigation shell is desired.
-      // This would wrap all main sections (Dashboard, Places, Events etc.) within AdminScaffold,
-      // allowing the sidebar to remain visible and interact with the router for navigation.
     ],
     errorBuilder: (context, state) => Scaffold(
-      // Basic error page
       appBar: AppBar(title: const Text('Error')),
       body: Center(child: Text('Page not found: ${state.error?.message}')),
     ),
   );
+
+  /// Helper method to get the title based on the current route
+  static String _getTitleFromRoute(GoRouterState state) {
+    final name = state.name;
+    switch (name) {
+      case 'dashboard':
+        return 'Dashboard';
+      case 'places':
+      case 'newPlace':
+      case 'editPlace':
+        return 'Lugares';
+      case 'events':
+      case 'newEvent':
+      case 'editEvent':
+        return 'Eventos';
+      case 'reviews':
+      case 'moderateReview':
+        return 'Reseñas';
+      case 'categories':
+      case 'newCategory':
+      case 'editCategory':
+        return 'Categorías';
+      case 'users':
+      case 'manageUser':
+        return 'Usuarios';
+      case 'diagnostics':
+        return 'Diagnóstico';
+      default:
+        return 'Turbo Admin';
+    }
+  }
 }
 
 // Las páginas reales están implementadas en sus respectivos features con BLoC pattern

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
-import 'package:turbo_admin/core/widgets/admin_scaffold.dart';
+import 'package:turbo_admin/core/widgets/admin_page.dart';
 import 'package:turbo_admin/features/dashboard/presentation/cubit/dashboard_cubit.dart';
 
 /// Página principal del Dashboard con métricas y estadísticas
@@ -13,15 +13,13 @@ class DashboardPage extends StatelessWidget {
     return BlocProvider(
       create: (context) =>
           GetIt.instance<DashboardCubit>()..loadDashboardStats(),
-      child: AdminScaffold(
-        title: 'Dashboard',
+      child: AdminPage(
         body: BlocBuilder<DashboardCubit, DashboardState>(
           builder: (context, state) {
             if (state is DashboardLoading) {
               return const Center(child: CircularProgressIndicator());
             } else if (state is DashboardLoaded) {
               return SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

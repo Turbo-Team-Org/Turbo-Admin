@@ -40,19 +40,27 @@ class _AdminSidebarState extends State<AdminSidebar>
     final String? currentRouteName = routerState.name;
     final String? topRouteName = routerState.topRoute?.name;
 
-    if (topRouteName == 'dashboard' || currentRouteName == 'dashboard')
+    if (topRouteName == 'dashboard' || currentRouteName == 'dashboard') {
       return 0;
+    }
     if (topRouteName == 'places' ||
         currentRouteName == 'newPlace' ||
-        currentRouteName == 'editPlace') return 1;
+        currentRouteName == 'editPlace') {
+      return 1;
+    }
     if (topRouteName == 'events' ||
         currentRouteName == 'newEvent' ||
-        currentRouteName == 'editEvent') return 2;
-    if (topRouteName == 'reviews' || currentRouteName == 'moderateReview')
+        currentRouteName == 'editEvent') {
+      return 2;
+    }
+    if (topRouteName == 'reviews' || currentRouteName == 'moderateReview') {
       return 3;
+    }
     if (topRouteName == 'categories' ||
         currentRouteName == 'newCategory' ||
-        currentRouteName == 'editCategory') return 4;
+        currentRouteName == 'editCategory') {
+      return 4;
+    }
     if (topRouteName == 'users' || currentRouteName == 'manageUser') return 5;
 
     final String location = routerState.uri.toString();
@@ -499,7 +507,7 @@ class _AdminSidebarState extends State<AdminSidebar>
                 );
               },
             );
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -568,7 +576,7 @@ class _AdminSidebarState extends State<AdminSidebar>
                                         ],
                                 ),
                               ),
-                              child: Icon(
+                              child: const Icon(
                                 Icons.admin_panel_settings,
                                 color: Colors.white,
                                 size: 16,
@@ -652,7 +660,7 @@ class _AdminSidebarState extends State<AdminSidebar>
 
                 // Footer text
                 Text(
-                  '© 2024 Turbo Admin',
+                  '© 2025 Turbo Admin',
                   style: TextStyle(
                     fontSize: 11,
                     fontFamily: 'MuseoSans',

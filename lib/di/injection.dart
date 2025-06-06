@@ -1,7 +1,6 @@
 import 'package:core/core.dart';
 import 'package:get_it/get_it.dart';
 import 'package:flutter/foundation.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:turbo_admin/core/firebase/firebase_factory.dart';
 import 'package:turbo_admin/features/places/cubit/place_form_cubit.dart';
 import 'package:turbo_admin/features/places/cubit/places_cubit.dart';

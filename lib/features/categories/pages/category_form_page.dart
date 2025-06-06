@@ -1,10 +1,68 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
-import 'package:go_router/go_router.dart';
-import 'package:turbo_admin/core/widgets/admin_scaffold.dart';
+import 'package:turbo_admin/core/widgets/admin_page.dart';
 import 'package:turbo_admin/features/categories/cubit/category_form_cubit.dart';
 import 'package:core/core.dart'; // For Category model
+
+class CategoryFormPage extends StatelessWidget {
+  final String? categoryId;
+
+  const CategoryFormPage({super.key, this.categoryId});
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) =>
+          GetIt.instance<CategoryFormCubit>()..loadForm(categoryId: categoryId),
+      child: AdminPage(
+        body: BlocBuilder<CategoryFormCubit, CategoryFormState>(
+          builder: (context, state) {
+            if (state is CategoryFormLoading) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (state is CategoryFormLoaded) {
+              return const Center(
+                child: Text('Formulario de categoría (placeholder)'),
+              );
+            } else if (state is CategoryFormError) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: Colors.red[400],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Error cargando formulario',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(state.message),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => context
+                          .read<CategoryFormCubit>()
+                          .loadForm(categoryId: categoryId),
+                      child: const Text('Reintentar'),
+                    ),
+                  ],
+                ),
+              );
+            } else {
+              return const Center(child: Text('Estado inicial'));
+            }
+          },
+        ),
+      ),
+    );
+  }
+}
+
+
+/*
 
 class CategoryFormPage extends StatefulWidget {
   final String? categoryId;
@@ -250,3 +308,5 @@ class _CategoryFormPageState extends State<CategoryFormPage> {
     );
   }
 }
+
+*/

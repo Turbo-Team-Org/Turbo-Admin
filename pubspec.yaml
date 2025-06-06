@@ -13,10 +13,13 @@ dependencies:
 
   # PAQUETE PRINCIPAL - contiene toda la lógica
   core:
-    git:
-      url: git@github.com:Turbo-Team-Org/Turbo_Core.git
-      ref: b8c6f32237eae84b6ace606f36e515dd4dc9736f
-      path: core
+    path: ../Turbo_Core/core
+
+    # git:
+    #   url: git@github.com:Turbo-Team-Org/Turbo_Core.git
+    #   ref: b8c6f32237eae84b6ace606f36e515dd4dc9736f
+    #   path: core
+
 
   # Solo para UI y estado
   flutter_bloc: ^8.1.6

@@ -45,9 +45,9 @@ class _RegisterViewState extends State<_RegisterView> {
     super.dispose();
   }
 
-  void _handleRegister() {
+  void _handleRegister() async {
     if (_formKey.currentState?.validate() == true) {
-      context.read<AdminAuthCubit>().signUpWithEmailAndPassword(
+      await context.read<AdminAuthCubit>().signUpWithEmailAndPassword(
             email: _emailController.text.trim(),
             password: _passwordController.text,
             displayName: _nameController.text.trim(),
@@ -299,17 +299,17 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return const Column(
       children: [
         // Logo oficial de Turbo
-        const TurboLogo(
+        TurboLogo(
           width: 160,
           height: 118,
         ),
 
-        const SizedBox(height: 32),
+        SizedBox(height: 32),
 
-        const Text(
+        Text(
           'Crear Cuenta',
           style: TextStyle(
             fontSize: 28,
@@ -319,9 +319,9 @@ class _Header extends StatelessWidget {
           ),
         ),
 
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
 
-        const Text(
+        Text(
           'Únete al equipo de administradores',
           style: TextStyle(
             fontSize: 16,

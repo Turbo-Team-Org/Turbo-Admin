@@ -1,0 +1,12 @@
+{
+    "configurations": [
+    {
+        "name": "TURBO Admin WEB - PRE",
+        "type": "dart",
+        "request": "launch",
+        "program": "lib/main.dart",
+        "args": ["--target","lib/main.dart","-d","chrome"],
+        "toolArgs": ["--dart-define-from-file","app_config/pre.json"]
+    }
+    ]
+}

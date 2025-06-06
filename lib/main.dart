@@ -3,11 +3,8 @@ import 'package:get_it/get_it.dart';
 // Assuming 'core' is the name of your turbo_core package
 // and it has an init.dart or similar for initialization.
 // Adjust the import if your turbo_core package structure is different.
-import 'package:core/core.dart';
-import 'package:turbo_admin/app/app.dart';
 import 'package:turbo_admin/di/injection.dart'; // For initUIDependencies
 import 'package:turbo_admin/core/firebase/firebase_factory.dart';
-import 'package:turbo_admin/core/widgets/firebase_loading_widget.dart';
 import 'package:turbo_admin/core/theme/theme_service.dart';
 import 'package:turbo_admin/app/router/app_router.dart';
 

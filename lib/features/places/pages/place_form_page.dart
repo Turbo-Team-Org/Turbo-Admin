@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart'; // For navigation
-import 'package:turbo_admin/core/widgets/admin_scaffold.dart';
+import 'package:turbo_admin/core/widgets/admin_page.dart';
 import 'package:turbo_admin/features/places/cubit/place_form_cubit.dart';
 import 'package:core/core.dart'; // For Place and Category models
 
@@ -91,8 +91,8 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
     return BlocProvider(
       create: (context) =>
           GetIt.instance<PlaceFormCubit>()..loadForm(placeId: widget.placeId),
-      child: AdminScaffold(
-        title: widget.placeId == null ? 'Crear Lugar' : 'Editar Lugar',
+      child: AdminPage(
+        //  title: widget.placeId == null ? 'Crear Lugar' : 'Editar Lugar',
         body: BlocConsumer<PlaceFormCubit, PlaceFormState>(
           listener: (context, state) {
             if (state is PlaceFormSuccess) {

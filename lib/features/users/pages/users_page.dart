@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:turbo_admin/core/widgets/admin_scaffold.dart';
+import 'package:turbo_admin/core/widgets/admin_page.dart';
 import 'package:turbo_admin/core/widgets/data_tables/users_data_table.dart';
 import 'package:turbo_admin/features/users/cubit/users_cubit.dart';
 import 'package:get_it/get_it.dart';
@@ -14,15 +14,12 @@ class PlaceholderUsersListPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => GetIt.instance<UsersCubit>(),
-      child: AdminScaffold(
-        title: 'Usuarios',
-        // No FAB for user creation typically
+      child: AdminPage(
         body: BlocBuilder<UsersCubit, UsersState>(
           builder: (context, state) {
             if (state is UsersLoading) {
               return const Center(child: CircularProgressIndicator());
-            }
-            if (state is UsersLoaded) {
+            } else if (state is UsersLoaded) {
               return UsersDataTable(
                   users: state.users,
                   onEdit: (userId) => context.goNamed('manageUser',
@@ -58,11 +55,36 @@ class PlaceholderUsersListPage extends StatelessWidget {
                   //   context.read<UsersCubit>().updateUserRole(userId, newRole);
                   // },
                   );
+            } else if (state is UsersError) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: Colors.red[400],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Error cargando usuarios',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(state.message),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () {},
+                      // onPressed: () => context.read<UsersCubit>().loadUsers(),
+
+                      child: const Text('Reintentar'),
+                    ),
+                  ],
+                ),
+              );
+            } else {
+              return const Center(child: Text('Estado inicial'));
             }
-            if (state is UsersError) {
-              return Center(child: Text('Error: ${state.message}'));
-            }
-            return const Center(child: Text('Lista de Usuarios'));
           },
         ),
       ),

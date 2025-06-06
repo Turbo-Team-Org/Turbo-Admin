@@ -49,11 +49,7 @@ class AdminScaffold extends StatelessWidget {
 
                 // Body content
                 Expanded(
-                  child: Padding(
-                    // Add some default padding around the body content
-                    padding: const EdgeInsets.all(16.0),
-                    child: body,
-                  ),
+                  child: body,
                 ),
               ],
             ),

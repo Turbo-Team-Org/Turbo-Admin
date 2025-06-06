@@ -1,7 +1,12 @@
+import 'package:auto_route/auto_route.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:get_it/get_it.dart';
+import 'package:turbo_admin/core/utils/app_flavor.dart';
+import 'package:turbo_admin/features/auth/utils/login_constants.dart';
 import '../cubit/admin_auth_cubit.dart';
 import '../widgets/turbo_text_field.dart';
 import '../widgets/turbo_button.dart';
@@ -34,6 +39,12 @@ class _LoginViewState extends State<_LoginView> {
   bool _obscurePassword = true;
 
   @override
+  void initState() {
+    _loadDataFromEnvironment();
+    super.initState();
+  }
+
+  @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
@@ -42,11 +53,19 @@ class _LoginViewState extends State<_LoginView> {
 
   void _handleLogin() {
     if (_formKey.currentState?.validate() == true) {
-      context.read<AdminAuthCubit>().signUpWithEmailAndPassword(
+      context.read<AdminAuthCubit>().signInWithEmailAndPassword(
             email: _emailController.text.trim(),
             password: _passwordController.text,
-            displayName: 'Admin',
           );
+    }
+  }
+
+  void _loadDataFromEnvironment() {
+    if (kDebugMode && AppFlavor.isPre) {
+      _emailController.text =
+          const String.fromEnvironment(LoginPageConstants.envTestUser);
+      _passwordController.text =
+          const String.fromEnvironment(LoginPageConstants.envTestPassword);
     }
   }
 
@@ -196,7 +215,7 @@ class _LoginViewState extends State<_LoginView> {
                             WidgetSpan(
                               child: GestureDetector(
                                 onTap: () {
-                                  context.go('/register');
+                                  context.push('/register');
                                 },
                                 child: const Text(
                                   'Registrarse',
@@ -227,12 +246,12 @@ class _LoginViewState extends State<_LoginView> {
                           children: [
                             Row(
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.admin_panel_settings,
                                   color: Color(0xFF15803D),
                                   size: 16,
                                 ),
-                                const SizedBox(width: 8),
+                                SizedBox(width: 8),
                                 Text(
                                   'Acceso de Administrador',
                                   style: TextStyle(
@@ -244,7 +263,7 @@ class _LoginViewState extends State<_LoginView> {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 4),
+                            SizedBox(height: 4),
                             Text(
                               'Solo usuarios autorizados como dueños de lugares pueden acceder al panel',
                               style: TextStyle(
@@ -275,17 +294,17 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return const Column(
       children: [
         // Logo oficial de Turbo (usando SVG por defecto)
-        const TurboLogo.svg(
+        TurboLogo.svg(
           width: 160,
           height: 118,
         ),
 
-        const SizedBox(height: 32),
+        SizedBox(height: 32),
 
-        const Text(
+        Text(
           'Panel de Administración',
           style: TextStyle(
             fontSize: 28,
@@ -295,9 +314,9 @@ class _Header extends StatelessWidget {
           ),
         ),
 
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
 
-        const Text(
+        Text(
           'Gestiona lugares, eventos y usuarios',
           style: TextStyle(
             fontSize: 16,

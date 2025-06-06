@@ -1,36 +1,10 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get_it/get_it.dart';
-import 'package:core/core.dart'; // For Place model and PlaceRepository/PlaceService
-// e.g., import 'package:core/models/place.dart';
-// import 'package:core/repositories/place_repository.dart';
-// import 'package:core/services/place_service.dart';
+import 'package:core/core.dart';
+import 'package:turbo_admin/core/state_management/base_cubit.dart'; // For Place model and PlaceRepository/PlaceService
+import 'package:turbo_admin/features/places/cubit/places_state.dart';
 
-// --- Places States ---
-abstract class PlacesState {}
-
-class PlacesInitial extends PlacesState {}
-
-class PlacesLoading extends PlacesState {}
-
-class PlacesLoaded extends PlacesState {
-  final List<Place> places; // Place comes from turbo_core
-  final int totalCount;
-  final int currentPage;
-
-  PlacesLoaded({
-    required this.places,
-    required this.totalCount,
-    required this.currentPage,
-  });
-}
-
-class PlacesError extends PlacesState {
-  final String message;
-  PlacesError(this.message);
-}
-
-// --- Places Cubit ---
-class PlacesCubit extends Cubit<PlacesState> {
+/// Cubit for managing places state and operations
+class PlacesCubit extends Cubit<PlacesState> with BaseCubit {
   final PlaceRepository _placeRepository;
 
   PlacesCubit({
@@ -39,40 +13,38 @@ class PlacesCubit extends Cubit<PlacesState> {
         super(PlacesInitial());
 
   Future<void> loadPlaces({int page = 1, String? categoryId}) async {
-    emit(PlacesLoading());
+    secureEmit(PlacesLoading());
     try {
       List<Place> places;
       if (categoryId != null && categoryId.isNotEmpty) {
         places = await _placeRepository.getPlacesByCategory(categoryId);
       } else {
-        places = await _placeRepository
-            .getPlaces(); // Assuming this gets all or a page
+        places = await _placeRepository.getPlaces();
       }
       // TODO: Implement actual pagination in repository if needed
-      emit(PlacesLoaded(
+      secureEmit(PlacesLoaded(
         places: places,
         totalCount:
             places.length, // This would be different with actual pagination
         currentPage: page,
       ));
     } catch (e) {
-      emit(PlacesError(e.toString()));
+      secureEmit(PlacesError(e.toString()));
     }
   }
 
   Future<void> deletePlace(String placeId) async {
-    // Keep current state or emit loading for delete action?
-    // For now, let's assume we want to show a loading state on the list or refresh.
-    // final previousState = state;
-    // emit(PlacesLoading()); // Or a specific DeletingPlaceState
+    final previousState = state;
+    secureEmit(PlacesLoading());
     try {
       await _placeRepository.deletePlace(placeId);
       // Reload places after deletion
       await loadPlaces();
-      // Alternatively, if PlacesLoaded holds the list, remove it manually and re-emit
     } catch (e) {
-      emit(PlacesError('Error al eliminar: ${e.toString()}'));
-      // if (previousState is PlacesLoaded) emit(previousState); // Optionally revert
+      secureEmit(PlacesError('Error al eliminar: ${e.toString()}'));
+      if (previousState is PlacesLoaded) {
+        secureEmit(previousState); // Optionally revert
+      }
     }
   }
 }

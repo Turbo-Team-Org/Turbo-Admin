@@ -80,7 +80,7 @@ class AuthLoading implements AuthState {
 class AuthAuthenticated implements AuthState {
   const AuthAuthenticated(this.user);
 
-  final AuthUser user;
+  final AdminUser user;
 
   /// Create a copy of AuthState
   /// with the given fields replaced by the non-null parameter values.
@@ -113,9 +113,9 @@ abstract mixin class $AuthAuthenticatedCopyWith<$Res>
           AuthAuthenticated value, $Res Function(AuthAuthenticated) _then) =
       _$AuthAuthenticatedCopyWithImpl;
   @useResult
-  $Res call({AuthUser user});
+  $Res call({AdminUser user});
 
-  $AuthUserCopyWith<$Res> get user;
+  $AdminUserCopyWith<$Res> get user;
 }
 
 /// @nodoc
@@ -136,7 +136,7 @@ class _$AuthAuthenticatedCopyWithImpl<$Res>
       null == user
           ? _self.user
           : user // ignore: cast_nullable_to_non_nullable
-              as AuthUser,
+              as AdminUser,
     ));
   }
 
@@ -144,8 +144,8 @@ class _$AuthAuthenticatedCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
-  $AuthUserCopyWith<$Res> get user {
-    return $AuthUserCopyWith<$Res>(_self.user, (value) {
+  $AdminUserCopyWith<$Res> get user {
+    return $AdminUserCopyWith<$Res>(_self.user, (value) {
       return _then(_self.copyWith(user: value));
     });
   }

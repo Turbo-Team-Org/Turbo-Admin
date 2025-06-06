@@ -9,7 +9,7 @@ sealed class AuthState with _$AuthState {
   const factory AuthState.loading() = AuthLoading;
 
   /// Usuario autenticado
-  const factory AuthState.authenticated(AuthUser user) = AuthAuthenticated;
+  const factory AuthState.authenticated(AdminUser user) = AuthAuthenticated;
 
   /// Usuario no autenticado
   const factory AuthState.unauthenticated() = AuthUnauthenticated;

@@ -7,7 +7,7 @@ part 'auth_state.dart';
 
 /// Cubit para manejar el estado de autenticación
 class AuthCubit extends Cubit<AuthState> {
-  final AuthenticationRepository _authRepository;
+  final AdminAuthRepository _authRepository;
 
   AuthCubit(this._authRepository) : super(const AuthState.initial());
 
@@ -19,16 +19,17 @@ class AuthCubit extends Cubit<AuthState> {
     emit(const AuthState.loading());
 
     try {
-      final user = await _authRepository.signInWithEmail(
+      final user = await _authRepository.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      if (user != null) {
-        emit(AuthState.authenticated(user));
-      } else {
-        emit(const AuthState.unauthenticated());
-      }
+      user.fold(
+        (l) => emit(AuthState.error(l.toString())),
+        (user) {
+          emit(AuthState.authenticated(user));
+        },
+      );
     } catch (e) {
       emit(AuthState.error(e.toString()));
     }
@@ -43,17 +44,19 @@ class AuthCubit extends Cubit<AuthState> {
     emit(const AuthState.loading());
 
     try {
-      final user = await _authRepository.signUpWithEmail(
+      final user = await _authRepository.signUpWithEmailAndPassword(
         email: email,
         password: password,
         displayName: displayName,
+        ownedPlaceIds: [],
       );
 
-      if (user != null) {
-        emit(AuthState.authenticated(user));
-      } else {
-        emit(const AuthState.unauthenticated());
-      }
+      user.fold(
+        (l) => emit(AuthState.error(l.toString())),
+        (user) {
+          emit(AuthState.authenticated(user));
+        },
+      );
     } catch (e) {
       emit(AuthState.error(e.toString()));
     }
@@ -76,13 +79,18 @@ class AuthCubit extends Cubit<AuthState> {
     emit(const AuthState.loading());
 
     try {
-      final user = await _authRepository.getCurrentUser();
+      final user = await _authRepository.getCurrentAdminUser();
 
-      if (user != null) {
-        emit(AuthState.authenticated(user));
-      } else {
-        emit(const AuthState.unauthenticated());
-      }
+      user.fold(
+        (l) => emit(AuthState.error(l.toString())),
+        (user) {
+          if (user == null) {
+            emit(const AuthState.unauthenticated());
+          } else {
+            emit(AuthState.authenticated(user));
+          }
+        },
+      );
     } catch (e) {
       emit(AuthState.error(e.toString()));
     }
@@ -93,7 +101,7 @@ class AuthCubit extends Cubit<AuthState> {
     emit(const AuthState.loading());
 
     try {
-      await _authRepository.sendPasswordResetEmail(email: email);
+      await _authRepository.sendPasswordResetEmail(email);
       emit(const AuthState.passwordResetSent());
     } catch (e) {
       emit(AuthState.error(e.toString()));
