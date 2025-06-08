@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
@@ -7,11 +8,12 @@ import 'package:turbo_admin/core/widgets/data_tables/places_data_table.dart';
 import 'package:turbo_admin/features/places/cubit/places_cubit.dart';
 import 'package:turbo_admin/features/places/cubit/places_state.dart';
 
-class PlaceholderPlacesListPage extends StatelessWidget {
-  const PlaceholderPlacesListPage({super.key});
+class PlacesListPage extends StatelessWidget {
+  const PlacesListPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return BlocProvider(
       create: (context) => GetIt.instance<PlacesCubit>()..loadPlaces(),
       child: AdminPage(
@@ -22,26 +24,37 @@ class PlaceholderPlacesListPage extends StatelessWidget {
             } else if (state is PlacesLoaded) {
               return PlacesDataTable(
                 places: state.places,
-                onEdit: (placeId) => context
-                    .goNamed('editPlace', pathParameters: {'placeId': placeId}),
+                onEdit: (placeId) {
+                  debugPrint(
+                      '🔄 PlacesListPage: Editando lugar con ID: $placeId');
+                  context.goNamed('editPlace',
+                      pathParameters: {'placeId': placeId});
+                },
                 onDelete: (placeId) {
                   // Basic confirmation dialog
                   showDialog(
                       context: context,
-                      builder: (_) => AlertDialog(
+                      builder: (dialogContext) => AlertDialog(
                             title: const Text("Confirmar"),
                             content: const Text(
                                 "¿Seguro que quieres eliminar este lugar?"),
                             actions: [
                               TextButton(
-                                  onPressed: () => Navigator.pop(context),
+                                  onPressed: () =>
+                                      Navigator.of(dialogContext).pop(),
                                   child: const Text("Cancelar")),
                               TextButton(
-                                  onPressed: () {
-                                    context
+                                  onPressed: () async {
+                                    // Cerrar el diálogo primero
+                                    Navigator.of(dialogContext).pop();
+                                    // Luego eliminar el lugar
+                                    await context
                                         .read<PlacesCubit>()
                                         .deletePlace(placeId);
-                                    Navigator.pop(context);
+                                    // Recargar la lista de lugares
+                                    if (context.mounted) {
+                                      context.read<PlacesCubit>().loadPlaces();
+                                    }
                                   },
                                   child: const Text("Eliminar",
                                       style: TextStyle(color: Colors.red)))
@@ -81,6 +94,8 @@ class PlaceholderPlacesListPage extends StatelessWidget {
           },
         ),
         floatingActionButton: FloatingActionButton.extended(
+          backgroundColor:
+              isDark ? const Color(0xFFFF5757) : const Color(0xFFE53E3E),
           icon: const Icon(Icons.add),
           label: const Text('Crear Lugar'),
           onPressed: () {

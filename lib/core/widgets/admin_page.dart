@@ -15,9 +15,19 @@ class AdminPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: body,
+    return Stack(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: body,
+        ),
+        if (floatingActionButton != null)
+          Positioned(
+            right: 24.0,
+            bottom: 24.0,
+            child: floatingActionButton!,
+          ),
+      ],
     );
   }
 }

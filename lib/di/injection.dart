@@ -112,16 +112,17 @@ void _registerUICubits(GetIt di) {
   debugPrint('✅ AdminAuthCubit registrado - Sistema de auth ACTIVADO');
 
   // Gestión de Lugares
-  di.registerLazySingleton(() => PlacesCubit(
-        placeRepository: di<PlaceRepository>(),
-      ));
-  debugPrint('✅ PlacesCubit registrado');
-
   di.registerLazySingleton(() => PlaceFormCubit(
         placeRepository: di<PlaceRepository>(),
         categoryRepository: di<CategoryRepository>(),
       ));
   debugPrint('✅ PlaceFormCubit registrado');
+
+  di.registerLazySingleton(() => PlacesCubit(
+        placeRepository: di<PlaceRepository>(),
+        placeFormCubit: di<PlaceFormCubit>(),
+      ));
+  debugPrint('✅ PlacesCubit registrado');
 
   // Gestión de Eventos
   di.registerLazySingleton(() => EventsCubit(

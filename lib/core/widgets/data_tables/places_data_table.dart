@@ -162,6 +162,7 @@ class PlacesDataTable extends StatelessWidget {
           ],
         );
       }).toList(),
+      //TODO add pagination
       // Optional: Add footer with pagination controls if using Paginator controller from data_table_2
       // bottomPaginator: PaginatorController(),
       // Paginator can be configured with PaginatorController to handle page changes.

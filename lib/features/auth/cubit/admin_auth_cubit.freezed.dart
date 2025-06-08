@@ -95,12 +95,11 @@ class AdminAuthAuthenticated implements AdminAuthState {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is AdminAuthAuthenticated &&
-            const DeepCollectionEquality().equals(other.user, user));
+            (identical(other.user, user) || other.user == user));
   }
 
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, const DeepCollectionEquality().hash(user));
+  int get hashCode => Object.hash(runtimeType, user);
 
   @override
   String toString() {
@@ -116,6 +115,8 @@ abstract mixin class $AdminAuthAuthenticatedCopyWith<$Res>
       _$AdminAuthAuthenticatedCopyWithImpl;
   @useResult
   $Res call({AdminUser user});
+
+  $AdminUserCopyWith<$Res> get user;
 }
 
 /// @nodoc
@@ -130,14 +131,24 @@ class _$AdminAuthAuthenticatedCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   $Res call({
-    Object? user = freezed,
+    Object? user = null,
   }) {
     return _then(AdminAuthAuthenticated(
-      freezed == user
+      null == user
           ? _self.user
           : user // ignore: cast_nullable_to_non_nullable
               as AdminUser,
     ));
+  }
+
+  /// Create a copy of AdminAuthState
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $AdminUserCopyWith<$Res> get user {
+    return $AdminUserCopyWith<$Res>(_self.user, (value) {
+      return _then(_self.copyWith(user: value));
+    });
   }
 }
 

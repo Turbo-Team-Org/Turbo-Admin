@@ -125,7 +125,7 @@ class AdminAuthCubit extends Cubit<AdminAuthState> with BaseCubit {
     if (admin == null) return false;
 
     // Super admin puede manejar cualquier lugar
-    if (admin.role.name == 'super_admin') return true;
+    if (admin.role.name == 'superAdmin') return true;
 
     // Verificar ownership
     return admin.ownedPlaceIds.contains(placeId);
@@ -146,6 +146,7 @@ class AdminAuthCubit extends Cubit<AdminAuthState> with BaseCubit {
       // TEMPORAL: Lista expandida de emails de administradores para desarrollo
       const adminEmails = [
         'dmwhispers551@gmail.com',
+        'alea@gmail.com',
         'admin@turbo.com',
         'david@turbo.com',
         'test@admin.com',
@@ -177,6 +178,27 @@ class AdminAuthCubit extends Cubit<AdminAuthState> with BaseCubit {
       return false;
     } catch (e) {
       return false;
+    }
+  }
+
+  /// Actualiza los lugares que administra un usuario
+  Future<void> updateOwnedPlaces(List<String> ownedPlaceIds) async {
+    secureEmit(const AdminAuthState.loading());
+
+    try {
+      final currentAdmin = currentAdminUser;
+      if (currentAdmin == null) {
+        throw Exception('No hay un administrador autenticado');
+      }
+
+      await _authRepository.updateOwnedPlaces(currentAdmin.uid, ownedPlaceIds);
+
+      // Actualizar el estado con los nuevos ownedPlaceIds
+      secureEmit(AdminAuthState.authenticated(
+        currentAdmin.copyWith(ownedPlaceIds: ownedPlaceIds),
+      ));
+    } catch (e) {
+      secureEmit(AdminAuthState.error(e.toString()));
     }
   }
 

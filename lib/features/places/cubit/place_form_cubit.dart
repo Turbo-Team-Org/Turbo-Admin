@@ -1,39 +1,24 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:core/core.dart';
+import 'package:turbo_admin/core/state_management/base_cubit.dart';
+import 'package:turbo_admin/features/places/cubit/place_form_state.dart';
+import 'package:turbo_admin/features/auth/cubit/admin_auth_cubit.dart';
 import 'package:get_it/get_it.dart';
-import 'package:core/core.dart'; // For Place, Category models and related Repos/Services
 // e.g., import 'package:core/models/place.dart';
 // import 'package:core/models/category.dart';
 // import 'package:core/repositories/category_repository.dart';
 // import 'package:core/repositories/place_repository.dart';
 // import 'package:core/services/place_service.dart';
 
-// --- PlaceForm States ---
-abstract class PlaceFormState {}
-
-class PlaceFormInitial extends PlaceFormState {}
-
-class PlaceFormLoading extends PlaceFormState {}
-
-class PlaceFormLoaded extends PlaceFormState {
-  final Place? place; // null for create, Place for edit
-  final List<Category> categories; // From turbo_core
-
-  PlaceFormLoaded({this.place, required this.categories});
-}
-
-class PlaceFormSaving extends PlaceFormState {}
-
-class PlaceFormSuccess extends PlaceFormState {}
-
-class PlaceFormError extends PlaceFormState {
-  final String message;
-  PlaceFormError(this.message);
-}
-
-// --- PlaceForm Cubit ---
-class PlaceFormCubit extends Cubit<PlaceFormState> {
+/// Cubit for managing place form state and operations
+class PlaceFormCubit extends Cubit<PlaceFormState> with BaseCubit {
   final PlaceRepository _placeRepository;
   final CategoryRepository _categoryRepository;
+  final _placeSavedController = StreamController<void>.broadcast();
+
+  Stream<void> get onPlaceSaved => _placeSavedController.stream;
 
   PlaceFormCubit({
     required PlaceRepository placeRepository,
@@ -42,34 +27,82 @@ class PlaceFormCubit extends Cubit<PlaceFormState> {
         _categoryRepository = categoryRepository,
         super(PlaceFormInitial());
 
-  Future<void> loadForm({String? placeId}) async {
-    emit(PlaceFormLoading());
+  @override
+  Future<void> close() {
+    _placeSavedController.close();
+    return super.close();
+  }
+
+  Future<void> loadFormData({String? placeId}) async {
+    debugPrint('🔄 PlaceFormCubit: Iniciando carga de datos...');
+    debugPrint('📍 PlaceFormCubit: placeId = $placeId');
+    secureEmit(PlaceFormLoading());
     try {
+      debugPrint('🔄 PlaceFormCubit: Cargando categorías...');
       final categories = await _categoryRepository.getAllCategories();
-      Place? place;
-      if (placeId != null && placeId.isNotEmpty) {
-        place = await _placeRepository.getPlaceById(placeId);
+      debugPrint('✅ PlaceFormCubit: Categorías cargadas: ${categories.length}');
+
+      if (placeId != null) {
+        debugPrint('🔄 PlaceFormCubit: Cargando lugar con ID: $placeId');
+        final place = await _placeRepository.getPlaceById(placeId);
+        debugPrint('✅ PlaceFormCubit: Lugar cargado: ${place.name}');
+        secureEmit(PlaceFormLoaded(
+          place: place,
+          categories: categories,
+        ));
+      } else {
+        debugPrint('ℹ️ PlaceFormCubit: Creando nuevo lugar');
+        secureEmit(PlaceFormLoaded(
+          place: null,
+          categories: categories,
+        ));
       }
-      emit(PlaceFormLoaded(place: place, categories: categories));
-    } catch (e) {
-      emit(PlaceFormError(e.toString()));
+    } catch (e, stackTrace) {
+      debugPrint('❌ PlaceFormCubit: Error al cargar datos: $e');
+      debugPrint('📍 StackTrace: $stackTrace');
+      secureEmit(PlaceFormError(e.toString()));
     }
   }
 
   Future<void> savePlace(Place place) async {
-    emit(PlaceFormSaving());
+    secureEmit(PlaceFormSaving());
     try {
-      // Assuming Place model has an 'id' field.
-      // And new places might have an empty or specific ID marker.
-      // The issue implies `place.id.isEmpty` for new places.
-      if (place.id.isEmpty) {
-        await _placeRepository.addPlace(place);
-      } else {
-        await _placeRepository.updatePlace(place);
+      final isNewPlace = place.id.isEmpty;
+      final adminAuthCubit = GetIt.instance<AdminAuthCubit>();
+      final currentAdmin = adminAuthCubit.currentAdminUser;
+
+      if (currentAdmin == null) {
+        throw Exception('No hay un administrador autenticado');
       }
-      emit(PlaceFormSuccess());
+
+      if (isNewPlace) {
+        // Generar un ID temporal para el lugar
+        final tempId = DateTime.now().millisecondsSinceEpoch.toString();
+
+        // Actualizar ownedPlaceIds del admin con el ID temporal
+        final updatedOwnedPlaceIds = [...currentAdmin.ownedPlaceIds, tempId];
+        await adminAuthCubit.updateOwnedPlaces(updatedOwnedPlaceIds);
+
+        // Crear el lugar con el ID temporal
+        final placeWithId = place.copyWith(id: tempId);
+        final success = await _placeRepository.addPlace(placeWithId);
+        if (!success) {
+          // Si falla, revertir la actualización de ownedPlaceIds
+          await adminAuthCubit.updateOwnedPlaces(currentAdmin.ownedPlaceIds);
+          throw Exception('Error al crear el lugar');
+        }
+      } else {
+        final success = await _placeRepository.updatePlace(place);
+        if (!success) {
+          throw Exception('Error al actualizar el lugar');
+        }
+      }
+
+      secureEmit(PlaceFormSuccess(isNewPlace: isNewPlace));
+      _placeSavedController
+          .add(null); // Notify listeners that a place was saved
     } catch (e) {
-      emit(PlaceFormError('Error al guardar: ${e.toString()}'));
+      secureEmit(PlaceFormError(e.toString()));
     }
   }
 }

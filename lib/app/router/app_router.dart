@@ -247,7 +247,7 @@ class AppRouter {
             pageBuilder: (context, state) => _buildPageWithSlideTransition(
               context,
               state,
-              const PlaceholderPlacesListPage(),
+              const PlacesListPage(),
             ),
             routes: <RouteBase>[
               GoRoute(

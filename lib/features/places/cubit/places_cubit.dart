@@ -1,16 +1,32 @@
+import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:core/core.dart';
 import 'package:turbo_admin/core/state_management/base_cubit.dart'; // For Place model and PlaceRepository/PlaceService
 import 'package:turbo_admin/features/places/cubit/places_state.dart';
+import 'package:turbo_admin/features/places/cubit/place_form_cubit.dart';
 
 /// Cubit for managing places state and operations
 class PlacesCubit extends Cubit<PlacesState> with BaseCubit {
   final PlaceRepository _placeRepository;
+  final PlaceFormCubit _placeFormCubit;
+  StreamSubscription? _placeSavedSubscription;
 
   PlacesCubit({
     required PlaceRepository placeRepository,
+    required PlaceFormCubit placeFormCubit,
   })  : _placeRepository = placeRepository,
-        super(PlacesInitial());
+        _placeFormCubit = placeFormCubit,
+        super(PlacesInitial()) {
+    _placeSavedSubscription = _placeFormCubit.onPlaceSaved.listen((_) {
+      loadPlaces(); // Reload places when a place is saved
+    });
+  }
+
+  @override
+  Future<void> close() {
+    _placeSavedSubscription?.cancel();
+    return super.close();
+  }
 
   Future<void> loadPlaces({int page = 1, String? categoryId}) async {
     secureEmit(PlacesLoading());
@@ -38,12 +54,24 @@ class PlacesCubit extends Cubit<PlacesState> with BaseCubit {
     secureEmit(PlacesLoading());
     try {
       await _placeRepository.deletePlace(placeId);
-      // Reload places after deletion
-      await loadPlaces();
+      // Si el estado anterior era PlacesLoaded, actualizamos la lista sin recargar
+      if (previousState is PlacesLoaded) {
+        final updatedPlaces =
+            previousState.places.where((p) => p.id != placeId).toList();
+        secureEmit(PlacesLoaded(
+          places: updatedPlaces,
+          totalCount: updatedPlaces.length,
+          currentPage: previousState.currentPage,
+        ));
+      } else {
+        // Si no teníamos lugares cargados, recargamos
+        await loadPlaces();
+      }
     } catch (e) {
       secureEmit(PlacesError('Error al eliminar: ${e.toString()}'));
       if (previousState is PlacesLoaded) {
-        secureEmit(previousState); // Optionally revert
+        secureEmit(
+            previousState); // Revertimos al estado anterior en caso de error
       }
     }
   }

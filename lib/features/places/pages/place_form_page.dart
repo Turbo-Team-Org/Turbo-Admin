@@ -1,18 +1,15 @@
+import 'package:core/core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart'; // For navigation
 import 'package:turbo_admin/core/widgets/admin_page.dart';
 import 'package:turbo_admin/features/places/cubit/place_form_cubit.dart';
-import 'package:core/core.dart'; // For Place and Category models
-
-// Assuming Place and Category models are correctly exported from package:core/core.dart
-// e.g., import 'package:core/models/place.dart';
-// import 'package:core/models/category.dart';
+import 'package:turbo_admin/features/places/cubit/place_form_state.dart';
+import 'package:turbo_admin/features/auth/cubit/admin_auth_cubit.dart';
 
 class PlaceFormPage extends StatefulWidget {
-  final String? placeId; // Nullable for creating a new place
-
+  final String? placeId;
   const PlaceFormPage({super.key, this.placeId});
 
   @override
@@ -64,7 +61,7 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
   void _initializeControllers(Place? place) {
     if (place != null) {
       _nameController.text = place.name;
-      _descriptionController.text = place.description ?? '';
+      _descriptionController.text = place.description;
       _addressController.text = place.address;
       // _latitudeController.text = place.latitude?.toString() ?? '';
       // _longitudeController.text = place.longitude?.toString() ?? '';
@@ -89,8 +86,8 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) =>
-          GetIt.instance<PlaceFormCubit>()..loadForm(placeId: widget.placeId),
+      create: (context) => GetIt.instance<PlaceFormCubit>()
+        ..loadFormData(placeId: widget.placeId),
       child: AdminPage(
         //  title: widget.placeId == null ? 'Crear Lugar' : 'Editar Lugar',
         body: BlocConsumer<PlaceFormCubit, PlaceFormState>(
@@ -140,8 +137,6 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
             }
 
             if (state is PlaceFormLoaded) {
-              // _initializeControllers(state.place); // Moved to listener to avoid issues with multiple builds
-
               return SingleChildScrollView(
                 padding: const EdgeInsets.all(24.0),
                 child: Form(
@@ -290,48 +285,47 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12)),
       onPressed: () {
         if (_formKey.currentState!.validate()) {
-          _formKey.currentState!
-              .save(); // Not strictly necessary with controllers usually
+          _formKey.currentState!.save();
+
+          // Obtener el admin actual
+          final adminAuthCubit = GetIt.instance<AdminAuthCubit>();
+          final currentAdmin = adminAuthCubit.currentAdminUser;
+
+          if (currentAdmin == null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Error: No hay un administrador autenticado'),
+                backgroundColor: Colors.red,
+              ),
+            );
+            return;
+          }
 
           // Construct the Place object from form values
-          // This is a simplified version. A real Place object would have more fields.
-          // Ensure all required fields from your core.Place model are included.
           final placeToSave = Place(
-            id: widget.placeId ??
-                currentPlace?.id ??
-                '', // Use currentPlace?.id if available and widget.placeId is null (e.g. after failed save)
+            id: widget.placeId ?? currentPlace?.id ?? '',
             name: _nameController.text,
             description: _descriptionController.text,
             address: _addressController.text,
-            categoryId:
-                _selectedCategory!.id, // Ensure _selectedCategory is not null
-            categoryName: _selectedCategory!
-                .name, // Store name for convenience if needed by UI
-
-            // --- Defaults for other required fields from Place model ---
-            // These must match your Place model definition in turbo_core
-            // Use currentPlace values if editing, or sensible defaults if creating
-            mainImage: currentPlace?.mainImage ??
-                '', // Placeholder, image handling is complex
-            imageUrls: currentPlace?.imageUrls ?? [], // Placeholder
-            latitude:
-                currentPlace?.latitude ?? 0.0, // Default or from map picker
-            longitude:
-                currentPlace?.longitude ?? 0.0, // Default or from map picker
-            rating: currentPlace?.rating ??
-                0.0, // Usually calculated, not set directly
-
-            isOpen: currentPlace?.isOpen ?? true, // Default state
+            categoryId: _selectedCategory!.id,
+            categoryName: _selectedCategory!.name,
+            mainImage: currentPlace?.mainImage ?? '',
+            imageUrls: currentPlace?.imageUrls ?? [],
+            latitude: currentPlace?.latitude ?? 0.0,
+            longitude: currentPlace?.longitude ?? 0.0,
+            rating: currentPlace?.rating ?? 0.0,
+            isOpen: currentPlace?.isOpen ?? true,
             phone: currentPlace?.phone ?? '',
             website: currentPlace?.website ?? '',
-            metadata: currentPlace?.metadata ?? {},
+            metadata: {
+              ...currentPlace?.metadata ?? {},
+              'ownerId': currentAdmin.uid, // Agregar ownerId en metadata
+            },
             averagePrice: currentPlace?.averagePrice ?? 0.0,
-            reviews: currentPlace?.reviews ??
-                [], // This might need to be set based on logged-in user
+            reviews: currentPlace?.reviews ?? [],
             menuUrl: currentPlace?.menuUrl ?? '',
             schedules: currentPlace?.schedules ?? [],
-            offers: currentPlace?.offers ??
-                [], // This might need to be set based on logged-in user
+            offers: currentPlace?.offers ?? [],
             tags: currentPlace?.tags ?? [],
             categoryIcon: currentPlace?.categoryIcon ?? '',
             openingHours: currentPlace?.openingHours ?? {},
