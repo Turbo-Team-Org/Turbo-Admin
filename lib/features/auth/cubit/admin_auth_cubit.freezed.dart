@@ -154,6 +154,150 @@ class _$AdminAuthAuthenticatedCopyWithImpl<$Res>
 
 /// @nodoc
 
+class AdminAuthRegisteringBusinessOwner implements AdminAuthState {
+  const AdminAuthRegisteringBusinessOwner(this.user);
+
+  final BusinessOwnerRegistrationResult user;
+
+  /// Create a copy of AdminAuthState
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @pragma('vm:prefer-inline')
+  $AdminAuthRegisteringBusinessOwnerCopyWith<AdminAuthRegisteringBusinessOwner>
+      get copyWith => _$AdminAuthRegisteringBusinessOwnerCopyWithImpl<
+          AdminAuthRegisteringBusinessOwner>(this, _$identity);
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is AdminAuthRegisteringBusinessOwner &&
+            (identical(other.user, user) || other.user == user));
+  }
+
+  @override
+  int get hashCode => Object.hash(runtimeType, user);
+
+  @override
+  String toString() {
+    return 'AdminAuthState.registeringBusinessOwner(user: $user)';
+  }
+}
+
+/// @nodoc
+abstract mixin class $AdminAuthRegisteringBusinessOwnerCopyWith<$Res>
+    implements $AdminAuthStateCopyWith<$Res> {
+  factory $AdminAuthRegisteringBusinessOwnerCopyWith(
+          AdminAuthRegisteringBusinessOwner value,
+          $Res Function(AdminAuthRegisteringBusinessOwner) _then) =
+      _$AdminAuthRegisteringBusinessOwnerCopyWithImpl;
+  @useResult
+  $Res call({BusinessOwnerRegistrationResult user});
+}
+
+/// @nodoc
+class _$AdminAuthRegisteringBusinessOwnerCopyWithImpl<$Res>
+    implements $AdminAuthRegisteringBusinessOwnerCopyWith<$Res> {
+  _$AdminAuthRegisteringBusinessOwnerCopyWithImpl(this._self, this._then);
+
+  final AdminAuthRegisteringBusinessOwner _self;
+  final $Res Function(AdminAuthRegisteringBusinessOwner) _then;
+
+  /// Create a copy of AdminAuthState
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  $Res call({
+    Object? user = null,
+  }) {
+    return _then(AdminAuthRegisteringBusinessOwner(
+      null == user
+          ? _self.user
+          : user // ignore: cast_nullable_to_non_nullable
+              as BusinessOwnerRegistrationResult,
+    ));
+  }
+}
+
+/// @nodoc
+
+class AdminAuthLoginBusinessOwner implements AdminAuthState {
+  const AdminAuthLoginBusinessOwner(this.user);
+
+  final BusinessOwnerRequest user;
+
+  /// Create a copy of AdminAuthState
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @pragma('vm:prefer-inline')
+  $AdminAuthLoginBusinessOwnerCopyWith<AdminAuthLoginBusinessOwner>
+      get copyWith => _$AdminAuthLoginBusinessOwnerCopyWithImpl<
+          AdminAuthLoginBusinessOwner>(this, _$identity);
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is AdminAuthLoginBusinessOwner &&
+            (identical(other.user, user) || other.user == user));
+  }
+
+  @override
+  int get hashCode => Object.hash(runtimeType, user);
+
+  @override
+  String toString() {
+    return 'AdminAuthState.loginBusinessOwner(user: $user)';
+  }
+}
+
+/// @nodoc
+abstract mixin class $AdminAuthLoginBusinessOwnerCopyWith<$Res>
+    implements $AdminAuthStateCopyWith<$Res> {
+  factory $AdminAuthLoginBusinessOwnerCopyWith(
+          AdminAuthLoginBusinessOwner value,
+          $Res Function(AdminAuthLoginBusinessOwner) _then) =
+      _$AdminAuthLoginBusinessOwnerCopyWithImpl;
+  @useResult
+  $Res call({BusinessOwnerRequest user});
+
+  $BusinessOwnerRequestCopyWith<$Res> get user;
+}
+
+/// @nodoc
+class _$AdminAuthLoginBusinessOwnerCopyWithImpl<$Res>
+    implements $AdminAuthLoginBusinessOwnerCopyWith<$Res> {
+  _$AdminAuthLoginBusinessOwnerCopyWithImpl(this._self, this._then);
+
+  final AdminAuthLoginBusinessOwner _self;
+  final $Res Function(AdminAuthLoginBusinessOwner) _then;
+
+  /// Create a copy of AdminAuthState
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  $Res call({
+    Object? user = null,
+  }) {
+    return _then(AdminAuthLoginBusinessOwner(
+      null == user
+          ? _self.user
+          : user // ignore: cast_nullable_to_non_nullable
+              as BusinessOwnerRequest,
+    ));
+  }
+
+  /// Create a copy of AdminAuthState
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $BusinessOwnerRequestCopyWith<$Res> get user {
+    return $BusinessOwnerRequestCopyWith<$Res>(_self.user, (value) {
+      return _then(_self.copyWith(user: value));
+    });
+  }
+}
+
+/// @nodoc
+
 class AdminAuthUnauthenticated implements AdminAuthState {
   const AdminAuthUnauthenticated();
 

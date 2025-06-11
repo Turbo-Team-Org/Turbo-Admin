@@ -212,9 +212,11 @@ packages:
   core:
     dependency: "direct main"
     description:
-      path: "../Turbo_Core/core"
-      relative: true
-    source: path
+      path: core
+      ref: "9fae8223c0b3ffdd306b6b4063b143b2a21d5901"
+      resolved-ref: "9fae8223c0b3ffdd306b6b4063b143b2a21d5901"
+      url: "git@github.com:Turbo-Team-Org/Turbo_Core.git"
+    source: git
     version: "0.1.0+1"
   cross_file:
     dependency: transitive
@@ -1045,7 +1047,7 @@ packages:
     source: hosted
     version: "1.4.0"
   uuid:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: uuid
       sha256: a5be9ef6618a7ac1e964353ef476418026db906c4facdedaa299b7a2e71690ff

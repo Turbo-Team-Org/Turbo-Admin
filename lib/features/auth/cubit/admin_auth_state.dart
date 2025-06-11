@@ -12,6 +12,14 @@ sealed class AdminAuthState with _$AdminAuthState {
   const factory AdminAuthState.authenticated(AdminUser user) =
       AdminAuthAuthenticated;
 
+  /// Estado de registro de propietario
+  const factory AdminAuthState.registeringBusinessOwner(
+      BusinessOwnerRegistrationResult user) = AdminAuthRegisteringBusinessOwner;
+
+  /// Estado de registro de administrador
+  const factory AdminAuthState.loginBusinessOwner(BusinessOwnerRequest user) =
+      AdminAuthLoginBusinessOwner;
+
   /// Usuario no autenticado
   const factory AdminAuthState.unauthenticated() = AdminAuthUnauthenticated;
 

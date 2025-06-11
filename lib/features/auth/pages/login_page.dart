@@ -75,7 +75,8 @@ class _LoginViewState extends State<_LoginView> {
       backgroundColor: const Color(0xFFF9FAFB),
       body: BlocListener<AdminAuthCubit, AdminAuthState>(
         listener: (context, state) {
-          if (state is AdminAuthAuthenticated) {
+          if (state is AdminAuthAuthenticated ||
+              state is AdminAuthLoginBusinessOwner) {
             // Navegar al dashboard
             context.go('/dashboard');
           } else if (state is AdminAuthError) {

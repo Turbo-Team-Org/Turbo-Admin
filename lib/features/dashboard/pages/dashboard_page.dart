@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:turbo_admin/core/widgets/admin_page.dart';
 import 'package:turbo_admin/features/dashboard/presentation/cubit/dashboard_cubit.dart';
+import 'package:turbo_admin/features/auth/cubit/admin_auth_cubit.dart';
 
 /// Página principal del Dashboard con métricas y estadísticas
 class DashboardPage extends StatelessWidget {
@@ -23,6 +24,11 @@ class DashboardPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Welcome Section con información del usuario
+                    _buildWelcomeSection(context),
+
+                    const SizedBox(height: 24),
+
                     // Stats Grid simplificado
                     _buildStatsGrid(state.stats),
 
@@ -159,6 +165,120 @@ class DashboardPage extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildWelcomeSection(BuildContext context) {
+    return BlocBuilder<AdminAuthCubit, AdminAuthState>(
+      bloc: GetIt.instance<AdminAuthCubit>(),
+      builder: (context, authState) {
+        if (authState is AdminAuthAuthenticated) {
+          final user = authState.user;
+          return Card(
+            elevation: 4,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFE53E3E), Color(0xFFFF6B35)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 30,
+                        backgroundColor: Colors.white.withOpacity(0.2),
+                        child: const Icon(
+                          Icons.business,
+                          size: 32,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '¡Bienvenido, ${user.displayName ?? 'Administrador'}!',
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                fontFamily: 'MuseoSans',
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              user.email,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.white.withOpacity(0.9),
+                                fontFamily: 'MuseoSans',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.white.withOpacity(0.2)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.business_center,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Panel de Administración de Negocios',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.white.withOpacity(0.9),
+                            fontFamily: 'MuseoSans',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        // Fallback si no hay usuario autenticado
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Row(
+              children: [
+                const Icon(Icons.dashboard, size: 32, color: Colors.grey),
+                const SizedBox(width: 16),
+                Text(
+                  'Panel de Administración',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

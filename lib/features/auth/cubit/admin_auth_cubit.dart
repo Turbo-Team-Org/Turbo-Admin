@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:core/core.dart';
 import 'package:turbo_admin/core/state_management/base_cubit.dart';
+import 'package:uuid/uuid.dart';
 
 part 'admin_auth_cubit.freezed.dart';
 part 'admin_auth_state.dart';
@@ -21,13 +22,14 @@ class AdminAuthCubit extends Cubit<AdminAuthState> with BaseCubit {
     secureEmit(const AdminAuthState.loading());
 
     try {
-      final user = await _authRepository.signInWithEmailAndPassword(
+      final user =
+          await _authRepository.signInWithEmailAndPasswordBusinessOwner(
         email: email,
         password: password,
       );
       user.fold(
         (l) => secureEmit(AdminAuthState.error(l.toString())),
-        (user) => secureEmit(AdminAuthState.authenticated(user)),
+        (user) => secureEmit(AdminAuthState.loginBusinessOwner(user)),
       );
     } catch (e) {
       secureEmit(AdminAuthState.error(e.toString()));
@@ -39,20 +41,24 @@ class AdminAuthCubit extends Cubit<AdminAuthState> with BaseCubit {
     required String email,
     required String password,
     required String displayName,
-    List<String> ownedPlaceIds = const [],
+    required String businessName,
+    required String businessDescription,
+    String? businessAddress,
   }) async {
     secureEmit(const AdminAuthState.loading());
 
     try {
-      final response = await _authRepository.signUpWithEmailAndPassword(
+      final response = await _authRepository.registerAndRequestBusinessOwner(
         email: email,
         password: password,
         displayName: displayName,
-        ownedPlaceIds: ownedPlaceIds,
+        businessName: businessName,
+        businessDescription: businessDescription,
+        businessAddress: businessAddress!,
       );
       response.fold(
         (l) => secureEmit(AdminAuthState.error(l.toString())),
-        (user) => secureEmit(AdminAuthState.authenticated(user)),
+        (user) => secureEmit(AdminAuthState.registeringBusinessOwner(user)),
       );
     } catch (e) {
       secureEmit(AdminAuthState.error(_parseAuthError(e.toString())));

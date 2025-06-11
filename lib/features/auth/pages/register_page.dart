@@ -33,6 +33,9 @@ class _RegisterViewState extends State<_RegisterView> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _businessNameController = TextEditingController();
+  final _businessDescriptionController = TextEditingController();
+  final _businessAddressController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
@@ -42,6 +45,9 @@ class _RegisterViewState extends State<_RegisterView> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _businessNameController.dispose();
+    _businessDescriptionController.dispose();
+    _businessAddressController.dispose();
     super.dispose();
   }
 
@@ -51,6 +57,11 @@ class _RegisterViewState extends State<_RegisterView> {
             email: _emailController.text.trim(),
             password: _passwordController.text,
             displayName: _nameController.text.trim(),
+            businessName: _businessNameController.text.trim(),
+            businessDescription: _businessDescriptionController.text.trim(),
+            businessAddress: _businessAddressController.text.trim().isNotEmpty
+                ? _businessAddressController.text.trim()
+                : null,
           );
     }
   }
@@ -62,7 +73,17 @@ class _RegisterViewState extends State<_RegisterView> {
       body: BlocListener<AdminAuthCubit, AdminAuthState>(
         listener: (context, state) {
           if (state is AdminAuthAuthenticated) {
-            // Navegar al dashboard
+            // Navegar al dashboard cuando esté completamente autenticado
+            context.go('/dashboard');
+          } else if (state is AdminAuthRegisteringBusinessOwner) {
+            // Mostrar mensaje de éxito y navegar al dashboard
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                    '¡Registro exitoso! Bienvenido al panel de administración.'),
+                backgroundColor: Color(0xFF10B981),
+              ),
+            );
             context.go('/dashboard');
           } else if (state is AdminAuthError) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -235,6 +256,76 @@ class _RegisterViewState extends State<_RegisterView> {
                             });
                           },
                         ),
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Separador para información del negocio
+                      Container(
+                        width: double.infinity,
+                        height: 1,
+                        color: const Color(0xFFE5E7EB),
+                        margin: const EdgeInsets.symmetric(vertical: 8),
+                      ),
+
+                      const Text(
+                        'Información del Negocio',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          fontFamily: 'MuseoSans',
+                          color: Color(0xFF374151),
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      TurboTextField(
+                        label: 'Nombre del Negocio',
+                        hintText: 'Mi Restaurante',
+                        controller: _businessNameController,
+                        keyboardType: TextInputType.text,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Por favor ingresa el nombre del negocio';
+                          }
+                          if (value.length < 3) {
+                            return 'El nombre debe tener al menos 3 caracteres';
+                          }
+                          return null;
+                        },
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      TurboTextField(
+                        label: 'Descripción del Negocio',
+                        hintText:
+                            'Restaurante de comida italiana con ambiente familiar...',
+                        controller: _businessDescriptionController,
+                        keyboardType: TextInputType.multiline,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Por favor describe tu negocio';
+                          }
+                          if (value.length < 20) {
+                            return 'La descripción debe tener al menos 20 caracteres';
+                          }
+                          return null;
+                        },
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      TurboTextField(
+                        label: 'Dirección del Negocio (Opcional)',
+                        hintText: 'Calle 123, Ciudad, Estado',
+                        controller: _businessAddressController,
+                        keyboardType: TextInputType.streetAddress,
+                        validator: (value) {
+                          // Campo opcional, no requiere validación
+                          return null;
+                        },
                       ),
 
                       const SizedBox(height: 32),

@@ -337,178 +337,185 @@ class _AdminSidebarState extends State<AdminSidebar>
       ),
     ];
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Text(
-              'NAVEGACIÓN',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                fontFamily: 'MuseoSans',
-                color:
-                    isDark ? const Color(0xFF71717A) : const Color(0xFF9CA3AF),
-                letterSpacing: 1.2,
+    return SingleChildScrollView(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Text(
+                'NAVEGACIÓN',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  fontFamily: 'MuseoSans',
+                  color: isDark
+                      ? const Color(0xFF71717A)
+                      : const Color(0xFF9CA3AF),
+                  letterSpacing: 1.2,
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 8),
-          ...menuItems.map((item) {
-            final isSelected = selectedIndex == item.index;
-            final isHovered = _hoveredIndex == item.index;
+            const SizedBox(height: 8),
+            ...menuItems.map((item) {
+              final isSelected = selectedIndex == item.index;
+              final isHovered = _hoveredIndex == item.index;
 
-            return TweenAnimationBuilder<double>(
-              duration: const Duration(milliseconds: 200),
-              tween:
-                  Tween(begin: 0.0, end: isSelected || isHovered ? 1.0 : 0.0),
-              builder: (context, animation, child) {
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 4),
-                  child: MouseRegion(
-                    onEnter: (_) => setState(() => _hoveredIndex = item.index),
-                    onExit: (_) => setState(() => _hoveredIndex = null),
-                    child: GestureDetector(
-                      onTap: () => _navigateToIndex(item.index),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        curve: Curves.easeOutCubic,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 14),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
-                          gradient: isSelected
-                              ? LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: isDark
-                                      ? [
-                                          const Color(0xFFFF5757),
-                                          const Color(0xFFFF8A65)
-                                        ]
-                                      : [
-                                          const Color(0xFFE53E3E),
-                                          const Color(0xFFFF6B35)
-                                        ],
-                                )
-                              : LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: isDark
-                                      ? [
-                                          const Color(0xFFFF5757)
-                                              .withOpacity(animation * 0.15),
-                                          const Color(0xFFFF8A65)
-                                              .withOpacity(animation * 0.15),
-                                        ]
-                                      : [
-                                          const Color(0xFFE53E3E)
-                                              .withOpacity(animation * 0.1),
-                                          const Color(0xFFFF6B35)
-                                              .withOpacity(animation * 0.1),
-                                        ],
-                                ),
-                          boxShadow: isSelected
-                              ? [
-                                  BoxShadow(
-                                    offset: const Offset(0, 4),
-                                    blurRadius: 12,
-                                    color: isDark
-                                        ? const Color(0xFFFF5757)
-                                            .withOpacity(0.3)
-                                        : const Color(0xFFE53E3E)
-                                            .withOpacity(0.3),
+              return TweenAnimationBuilder<double>(
+                duration: const Duration(milliseconds: 200),
+                tween:
+                    Tween(begin: 0.0, end: isSelected || isHovered ? 1.0 : 0.0),
+                builder: (context, animation, child) {
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 4),
+                    child: MouseRegion(
+                      onEnter: (_) =>
+                          setState(() => _hoveredIndex = item.index),
+                      onExit: (_) => setState(() => _hoveredIndex = null),
+                      child: GestureDetector(
+                        onTap: () => _navigateToIndex(item.index),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          curve: Curves.easeOutCubic,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 14),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            gradient: isSelected
+                                ? LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: isDark
+                                        ? [
+                                            const Color(0xFFFF5757),
+                                            const Color(0xFFFF8A65)
+                                          ]
+                                        : [
+                                            const Color(0xFFE53E3E),
+                                            const Color(0xFFFF6B35)
+                                          ],
+                                  )
+                                : LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: isDark
+                                        ? [
+                                            const Color(0xFFFF5757)
+                                                .withOpacity(animation * 0.15),
+                                            const Color(0xFFFF8A65)
+                                                .withOpacity(animation * 0.15),
+                                          ]
+                                        : [
+                                            const Color(0xFFE53E3E)
+                                                .withOpacity(animation * 0.1),
+                                            const Color(0xFFFF6B35)
+                                                .withOpacity(animation * 0.1),
+                                          ],
                                   ),
-                                ]
-                              : null,
-                        ),
-                        child: Row(
-                          children: [
-                            AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(10),
-                                color: isSelected
-                                    ? Colors.white.withOpacity(0.2)
-                                    : Colors.transparent,
-                              ),
-                              child: Icon(
-                                item.icon,
-                                size: 22,
-                                color: isSelected
-                                    ? Colors.white
-                                    : Color.lerp(
-                                        isDark
-                                            ? const Color(0xFFA1A1AA)
-                                            : const Color(0xFF6B7280),
-                                        isDark
-                                            ? const Color(0xFFFF5757)
-                                            : const Color(0xFFE53E3E),
-                                        animation,
-                                      ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                item.label,
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: isSelected
-                                      ? FontWeight.w700
-                                      : FontWeight.w600,
-                                  fontFamily: 'MuseoSans',
+                            boxShadow: isSelected
+                                ? [
+                                    BoxShadow(
+                                      offset: const Offset(0, 4),
+                                      blurRadius: 12,
+                                      color: isDark
+                                          ? const Color(0xFFFF5757)
+                                              .withOpacity(0.3)
+                                          : const Color(0xFFE53E3E)
+                                              .withOpacity(0.3),
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: Row(
+                            children: [
+                              AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10),
+                                  color: isSelected
+                                      ? Colors.white.withOpacity(0.2)
+                                      : Colors.transparent,
+                                ),
+                                child: Icon(
+                                  item.icon,
+                                  size: 22,
                                   color: isSelected
                                       ? Colors.white
                                       : Color.lerp(
                                           isDark
-                                              ? const Color(0xFFF8FAFC)
-                                              : const Color(0xFF374151),
+                                              ? const Color(0xFFA1A1AA)
+                                              : const Color(0xFF6B7280),
                                           isDark
                                               ? const Color(0xFFFF5757)
                                               : const Color(0xFFE53E3E),
                                           animation,
                                         ),
-                                  letterSpacing: 0.1,
                                 ),
                               ),
-                            ),
-                            if (isSelected || isHovered)
-                              TweenAnimationBuilder<double>(
-                                duration: const Duration(milliseconds: 200),
-                                tween: Tween(begin: 0.0, end: 1.0),
-                                builder: (context, scaleAnimation, child) {
-                                  return Transform.scale(
-                                    scale: scaleAnimation,
-                                    child: Container(
-                                      width: 6,
-                                      height: 6,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: isSelected
-                                            ? Colors.white
-                                            : isDark
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  item.label,
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w700
+                                        : FontWeight.w600,
+                                    fontFamily: 'MuseoSans',
+                                    color: isSelected
+                                        ? Colors.white
+                                        : Color.lerp(
+                                            isDark
+                                                ? const Color(0xFFF8FAFC)
+                                                : const Color(0xFF374151),
+                                            isDark
                                                 ? const Color(0xFFFF5757)
                                                 : const Color(0xFFE53E3E),
-                                      ),
-                                    ),
-                                  );
-                                },
+                                            animation,
+                                          ),
+                                    letterSpacing: 0.1,
+                                  ),
+                                ),
                               ),
-                          ],
+                              if (isSelected || isHovered)
+                                TweenAnimationBuilder<double>(
+                                  duration: const Duration(milliseconds: 200),
+                                  tween: Tween(begin: 0.0, end: 1.0),
+                                  builder: (context, scaleAnimation, child) {
+                                    return Transform.scale(
+                                      scale: scaleAnimation,
+                                      child: Container(
+                                        width: 6,
+                                        height: 6,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: isSelected
+                                              ? Colors.white
+                                              : isDark
+                                                  ? const Color(0xFFFF5757)
+                                                  : const Color(0xFFE53E3E),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                );
-              },
-            );
-          }),
-        ],
+                  );
+                },
+              );
+            }),
+            // Espaciado adicional al final para mejor UX del scroll
+            const SizedBox(height: 16),
+          ],
+        ),
       ),
     );
   }
