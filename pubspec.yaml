@@ -17,7 +17,7 @@ dependencies:
 
     git:
       url: git@github.com:Turbo-Team-Org/Turbo_Core.git
-      ref: 9fae8223c0b3ffdd306b6b4063b143b2a21d5901
+      ref: c5198635fc7daf169addf08adb379b74061f7858
       path: core
 
   # Solo para UI y estado

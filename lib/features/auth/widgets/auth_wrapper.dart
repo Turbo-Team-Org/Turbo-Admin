@@ -17,30 +17,28 @@ class AuthWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => GetIt.instance<AdminAuthCubit>()..checkAuthStatus(),
-      child: BlocListener<AdminAuthCubit, AdminAuthState>(
-        listener: (context, state) {
-          if (state is AdminAuthUnauthenticated || state is AdminAuthError) {
-            // Si no está autenticado, redirigir a login
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              context.go('/login');
-            });
+    return BlocListener<AdminAuthCubit, AdminAuthState>(
+      listener: (context, state) {
+        if (state is AdminAuthUnauthenticated || state is AdminAuthError) {
+          // Si no está autenticado, redirigir a login
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            context.go('/login');
+          });
+        }
+      },
+      child: BlocBuilder<AdminAuthCubit, AdminAuthState>(
+        builder: (context, state) {
+          if (state is AdminAuthLoading || state is AdminAuthInitial) {
+            return const _LoadingView();
+          } else if (state is AdminAuthenticatedAdmin ||
+              state is AdminAuthenticatedBusinessOwner) {
+            return child;
+          } else {
+            // En caso de error o no autenticado, mostrar página de carga
+            // El listener se encargará de redirigir
+            return const _LoadingView();
           }
         },
-        child: BlocBuilder<AdminAuthCubit, AdminAuthState>(
-          builder: (context, state) {
-            if (state is AdminAuthLoading || state is AdminAuthInitial) {
-              return const _LoadingView();
-            } else if (state is AdminAuthAuthenticated) {
-              return child;
-            } else {
-              // En caso de error o no autenticado, mostrar página de carga
-              // El listener se encargará de redirigir
-              return const _LoadingView();
-            }
-          },
-        ),
       ),
     );
   }

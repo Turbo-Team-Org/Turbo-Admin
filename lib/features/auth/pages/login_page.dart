@@ -12,16 +12,13 @@ import '../widgets/turbo_text_field.dart';
 import '../widgets/turbo_button.dart';
 import 'package:turbo_admin/core/widgets/turbo_logo.dart';
 
-/// Página de inicio de sesión con diseño Turbo
+/// Página de inicio de sesión con diseño Turbo - Sistema Unificado
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => GetIt.instance<AdminAuthCubit>(),
-      child: const _LoginView(),
-    );
+    return const _LoginView();
   }
 }
 
@@ -53,7 +50,7 @@ class _LoginViewState extends State<_LoginView> {
 
   void _handleLogin() {
     if (_formKey.currentState?.validate() == true) {
-      context.read<AdminAuthCubit>().signInWithEmailAndPassword(
+      context.read<AdminAuthCubit>().signInUnified(
             email: _emailController.text.trim(),
             password: _passwordController.text,
           );
@@ -75,10 +72,16 @@ class _LoginViewState extends State<_LoginView> {
       backgroundColor: const Color(0xFFF9FAFB),
       body: BlocListener<AdminAuthCubit, AdminAuthState>(
         listener: (context, state) {
-          if (state is AdminAuthAuthenticated ||
-              state is AdminAuthLoginBusinessOwner) {
-            // Navegar al dashboard
+          // Navegación condicional basada en el tipo de usuario autenticado
+          if (state is AdminAuthenticatedAdmin) {
+            // Super Admin o Admin aprobado → Dashboard completo
             context.go('/dashboard');
+          } else if (state is AdminAuthenticatedBusinessOwner) {
+            // Business Owner → Dashboard condicional según estado
+            context.go('/business-owner-dashboard');
+          } else if (state is AdminAuthBusinessOwnerRegistered) {
+            // Business Owner recién registrado → Dashboard con estado pending
+            context.go('/business-owner-dashboard');
           } else if (state is AdminAuthError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(

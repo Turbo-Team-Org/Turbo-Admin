@@ -31,10 +31,17 @@ import 'package:turbo_admin/features/users/pages/user_management_page.dart';
 // Diagnostics
 import 'package:turbo_admin/features/diagnostics/pages/diagnostics_page.dart';
 
+// Business Requests
+import 'package:turbo_admin/features/business_requests/pages/business_requests_page.dart';
+
 // Auth
 import 'package:turbo_admin/features/auth/pages/login_page.dart';
 import 'package:turbo_admin/features/auth/pages/register_page.dart';
 import 'package:turbo_admin/features/auth/pages/loading_page.dart';
+import 'package:turbo_admin/features/auth/pages/business_owner_registration_page.dart';
+
+// Business Owner Dashboard
+import 'package:turbo_admin/features/dashboard/pages/business_owner_dashboard_page.dart';
 
 // Simple global key for the router's navigator state, useful for contextless navigation if needed
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -60,13 +67,21 @@ String? _handleRedirect(BuildContext context, GoRouterState state) {
     }
 
     // Estrategia simplificada:
-    // 1. Si está autenticado y en página de auth → dashboard
-    if (authState is AdminAuthAuthenticated && isOnAuthPage) {
+    // 1. Si está autenticado y en página de auth → dashboard apropiado
+    if ((authState is AdminAuthenticatedAdmin ||
+            authState is AdminAuthenticatedBusinessOwner) &&
+        isOnAuthPage) {
       if (kDebugMode) {
         debugPrint(
             '   ✅ Authenticated user on auth page - redirecting to dashboard');
       }
-      return '/dashboard';
+      // Redirigir según el tipo de usuario
+      if (authState is AdminAuthenticatedAdmin) {
+        return '/dashboard';
+      } else if (authState is AdminAuthenticatedBusinessOwner) {
+        return '/business-owner-dashboard';
+      }
+      return '/dashboard'; // fallback
     }
 
     // 2. Si NO está autenticado y NO está en página de auth → login
@@ -208,6 +223,16 @@ class AppRouter {
         ),
       ),
 
+      GoRoute(
+        path: '/register-business',
+        name: 'registerBusiness',
+        pageBuilder: (context, state) => _buildPageWithFadeTransition(
+          context,
+          state,
+          const BusinessOwnerRegistrationPage(),
+        ),
+      ),
+
       // === Main Shell Route ===
       ShellRoute(
         navigatorKey: _shellNavigatorKey,
@@ -229,6 +254,17 @@ class AppRouter {
             ),
           ),
 
+          // === Business Owner Dashboard ===
+          GoRoute(
+            path: '/business-owner-dashboard',
+            name: 'businessOwnerDashboard',
+            pageBuilder: (context, state) => _buildPageWithSlideTransition(
+              context,
+              state,
+              const BusinessOwnerDashboardPage(),
+            ),
+          ),
+
           // === Diagnóstico ===
           GoRoute(
             path: '/diagnostics',
@@ -237,6 +273,17 @@ class AppRouter {
               context,
               state,
               const DiagnosticsPage(),
+            ),
+          ),
+
+          // === Business Requests (Solo Super Admins) ===
+          GoRoute(
+            path: '/business-requests',
+            name: 'businessRequests',
+            pageBuilder: (context, state) => _buildPageWithSlideTransition(
+              context,
+              state,
+              const BusinessRequestsPage(),
             ),
           ),
 
@@ -429,6 +476,8 @@ class AppRouter {
     switch (name) {
       case 'dashboard':
         return 'Dashboard';
+      case 'businessOwnerDashboard':
+        return 'Dashboard Business Owner';
       case 'places':
       case 'newPlace':
       case 'editPlace':
@@ -449,6 +498,8 @@ class AppRouter {
         return 'Usuarios';
       case 'diagnostics':
         return 'Diagnóstico';
+      case 'businessRequests':
+        return 'Solicitudes de Business Owners';
       default:
         return 'Turbo Admin';
     }

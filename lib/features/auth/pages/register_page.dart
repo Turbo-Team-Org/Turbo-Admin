@@ -13,10 +13,7 @@ class RegisterPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => GetIt.instance<AdminAuthCubit>(),
-      child: const _RegisterView(),
-    );
+    return const _RegisterView();
   }
 }
 
@@ -53,15 +50,13 @@ class _RegisterViewState extends State<_RegisterView> {
 
   void _handleRegister() async {
     if (_formKey.currentState?.validate() == true) {
-      await context.read<AdminAuthCubit>().signUpWithEmailAndPassword(
+      await context.read<AdminAuthCubit>().registerAndRequestBusinessOwner(
             email: _emailController.text.trim(),
             password: _passwordController.text,
             displayName: _nameController.text.trim(),
             businessName: _businessNameController.text.trim(),
             businessDescription: _businessDescriptionController.text.trim(),
-            businessAddress: _businessAddressController.text.trim().isNotEmpty
-                ? _businessAddressController.text.trim()
-                : null,
+            businessAddress: _businessAddressController.text.trim(),
           );
     }
   }
@@ -72,19 +67,16 @@ class _RegisterViewState extends State<_RegisterView> {
       backgroundColor: const Color(0xFFF9FAFB),
       body: BlocListener<AdminAuthCubit, AdminAuthState>(
         listener: (context, state) {
-          if (state is AdminAuthAuthenticated) {
-            // Navegar al dashboard cuando esté completamente autenticado
-            context.go('/dashboard');
-          } else if (state is AdminAuthRegisteringBusinessOwner) {
-            // Mostrar mensaje de éxito y navegar al dashboard
+          if (state is AdminAuthBusinessOwnerRegistered) {
+            // Mostrar mensaje de éxito y navegar al dashboard de business owner
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text(
-                    '¡Registro exitoso! Bienvenido al panel de administración.'),
+                    '¡Registro exitoso! Tu solicitud está siendo revisada.'),
                 backgroundColor: Color(0xFF10B981),
               ),
             );
-            context.go('/dashboard');
+            context.go('/business-owner-dashboard');
           } else if (state is AdminAuthError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(

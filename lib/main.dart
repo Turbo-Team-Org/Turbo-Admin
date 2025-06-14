@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 // Assuming 'core' is the name of your turbo_core package
 // and it has an init.dart or similar for initialization.
@@ -7,6 +8,7 @@ import 'package:turbo_admin/di/injection.dart'; // For initUIDependencies
 import 'package:turbo_admin/core/firebase/firebase_factory.dart';
 import 'package:turbo_admin/core/theme/theme_service.dart';
 import 'package:turbo_admin/app/router/app_router.dart';
+import 'package:turbo_admin/features/auth/cubit/admin_auth_cubit.dart';
 
 /// Instancia global de GetIt para inyección de dependencias
 final getIt = GetIt.instance;
@@ -78,32 +80,35 @@ class TurboAdminApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: ThemeService(),
-      builder: (context, child) {
-        return MaterialApp.router(
-          title: 'Turbo Admin Panel',
-          debugShowCheckedModeBanner: false,
+    return BlocProvider<AdminAuthCubit>(
+      create: (context) => GetIt.instance<AdminAuthCubit>()..checkAuthStatus(),
+      child: AnimatedBuilder(
+        animation: ThemeService(),
+        builder: (context, child) {
+          return MaterialApp.router(
+            title: 'Turbo Admin Panel',
+            debugShowCheckedModeBanner: false,
 
-          // Sistema de temas dual premium
-          theme: TurboLightTheme.theme,
-          darkTheme: TurboDarkTheme.theme,
-          themeMode: ThemeService().themeMode,
+            // Sistema de temas dual premium
+            theme: TurboLightTheme.theme,
+            darkTheme: TurboDarkTheme.theme,
+            themeMode: ThemeService().themeMode,
 
-          // Router con transiciones suaves y autenticación integrada
-          routerConfig: AppRouter.router,
+            // Router con transiciones suaves y autenticación integrada
+            routerConfig: AppRouter.router,
 
-          // Builder para manejar tema con transiciones suaves
-          builder: (context, child) {
-            return AnimatedTheme(
-              duration: const Duration(milliseconds: 500),
-              curve: Curves.easeInOutCubic,
-              data: Theme.of(context),
-              child: child ?? const SizedBox.shrink(),
-            );
-          },
-        );
-      },
+            // Builder para manejar tema con transiciones suaves
+            builder: (context, child) {
+              return AnimatedTheme(
+                duration: const Duration(milliseconds: 500),
+                curve: Curves.easeInOutCubic,
+                data: Theme.of(context),
+                child: child ?? const SizedBox.shrink(),
+              );
+            },
+          );
+        },
+      ),
     );
   }
 }

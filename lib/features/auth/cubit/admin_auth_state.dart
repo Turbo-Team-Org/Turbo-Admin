@@ -8,17 +8,17 @@ sealed class AdminAuthState with _$AdminAuthState {
   /// Estado de carga
   const factory AdminAuthState.loading() = AdminAuthLoading;
 
-  /// Administrador autenticado
-  const factory AdminAuthState.authenticated(AdminUser user) =
-      AdminAuthAuthenticated;
+  /// Super Admin o Admin aprobado autenticado
+  const factory AdminAuthState.authenticatedAdmin(AdminUser user) =
+      AdminAuthenticatedAdmin;
 
-  /// Estado de registro de propietario
-  const factory AdminAuthState.registeringBusinessOwner(
-      BusinessOwnerRegistrationResult user) = AdminAuthRegisteringBusinessOwner;
+  /// Business Owner autenticado (con su solicitud y estado)
+  const factory AdminAuthState.authenticatedBusinessOwner(
+      BusinessOwnerRequest request) = AdminAuthenticatedBusinessOwner;
 
-  /// Estado de registro de administrador
-  const factory AdminAuthState.loginBusinessOwner(BusinessOwnerRequest user) =
-      AdminAuthLoginBusinessOwner;
+  /// Business Owner registrado exitosamente
+  const factory AdminAuthState.businessOwnerRegistered(
+      BusinessOwnerRequest request) = AdminAuthBusinessOwnerRegistered;
 
   /// Usuario no autenticado
   const factory AdminAuthState.unauthenticated() = AdminAuthUnauthenticated;
