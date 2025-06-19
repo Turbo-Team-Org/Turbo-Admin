@@ -5,7 +5,13 @@
       "type": "dart",
       "request": "launch",
       "program": "lib/main.dart",
-      "args": ["--target", "lib/main.dart", "-d", "chrome"]
+      "args": [
+        "--target", 
+        "lib/main.dart", 
+        "-d", 
+        "chrome",
+        "--dart-define-from-file=app_config/pre.json"
+      ]
     }
   ]
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:get_it/get_it.dart';
@@ -104,85 +105,194 @@ class _AdminSidebarState extends State<AdminSidebar>
     }
   }
 
+  void _showSignOutConfirmation(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          backgroundColor: isDark ? const Color(0xFF1F2937) : Colors.white,
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: (isDark
+                          ? const Color(0xFFFF5757)
+                          : const Color(0xFFE53E3E))
+                      .withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.logout,
+                  color: isDark
+                      ? const Color(0xFFFF5757)
+                      : const Color(0xFFE53E3E),
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Cerrar Sesión',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  fontFamily: 'MuseoSans',
+                  color: isDark
+                      ? const Color(0xFFF8FAFC)
+                      : const Color(0xFF111827),
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            '¿Estás seguro de que quieres cerrar sesión?',
+            style: TextStyle(
+              fontSize: 14,
+              fontFamily: 'MuseoSans',
+              color: isDark ? const Color(0xFFD1D5DB) : const Color(0xFF6B7280),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(
+                'Cancelar',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontFamily: 'MuseoSans',
+                  fontWeight: FontWeight.w600,
+                  color: isDark
+                      ? const Color(0xFF9CA3AF)
+                      : const Color(0xFF6B7280),
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                context.read<AdminAuthCubit>().signOut();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    isDark ? const Color(0xFFFF5757) : const Color(0xFFE53E3E),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              ),
+              child: Text(
+                'Cerrar Sesión',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontFamily: 'MuseoSans',
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final selectedIndex = _calculateSelectedIndex(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return AnimatedBuilder(
-      animation: _animationController,
-      builder: (context, child) {
-        return SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(-1, 0),
-            end: Offset.zero,
-          ).animate(CurvedAnimation(
-            parent: _animationController,
-            curve: Curves.easeOutCubic,
-          )),
-          child: Container(
-            width: 280,
-            height: double.infinity,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: isDark
-                    ? [
-                        const Color(0xFF0F0F23),
-                        const Color(0xFF1A1B3A),
-                        const Color(0xFF1E1E3F),
-                      ]
-                    : [
-                        Colors.white,
-                        const Color(0xFFFEF7F7),
-                        const Color(0xFFFDF2F2),
-                      ],
-              ),
-              boxShadow: [
-                BoxShadow(
-                  offset: const Offset(4, 0),
-                  blurRadius: 30,
-                  color: isDark
-                      ? const Color(0xFFFF5757).withOpacity(0.1)
-                      : const Color(0xFFE53E3E).withOpacity(0.1),
+    return BlocListener<AdminAuthCubit, AdminAuthState>(
+      listener: (context, state) {
+        if (state is AdminAuthUnauthenticated) {
+          if (kDebugMode) {
+            debugPrint(
+                '🔄 AdminSidebar: Usuario desautenticado, redirigiendo a login');
+          }
+          // Redirigir al login cuando el usuario se desautentica
+          context.go('/login');
+        }
+      },
+      child: AnimatedBuilder(
+        animation: _animationController,
+        builder: (context, child) {
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(-1, 0),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: _animationController,
+              curve: Curves.easeOutCubic,
+            )),
+            child: Container(
+              width: 280,
+              height: double.infinity,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: isDark
+                      ? [
+                          const Color(0xFF0F0F23),
+                          const Color(0xFF1A1B3A),
+                          const Color(0xFF1E1E3F),
+                        ]
+                      : [
+                          Colors.white,
+                          const Color(0xFFFEF7F7),
+                          const Color(0xFFFDF2F2),
+                        ],
                 ),
-              ],
-            ),
-            child: ClipRRect(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border(
-                      right: BorderSide(
-                        color: isDark
-                            ? const Color(0xFFFF5757).withOpacity(0.1)
-                            : const Color(0xFFE53E3E).withOpacity(0.1),
-                        width: 1,
+                boxShadow: [
+                  BoxShadow(
+                    offset: const Offset(4, 0),
+                    blurRadius: 30,
+                    color: isDark
+                        ? const Color(0xFFFF5757).withOpacity(0.1)
+                        : const Color(0xFFE53E3E).withOpacity(0.1),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border(
+                        right: BorderSide(
+                          color: isDark
+                              ? const Color(0xFFFF5757).withOpacity(0.1)
+                              : const Color(0xFFE53E3E).withOpacity(0.1),
+                          width: 1,
+                        ),
                       ),
                     ),
-                  ),
-                  child: Column(
-                    children: [
-                      // Header con logo
-                      _buildHeader(isDark),
+                    child: Column(
+                      children: [
+                        // Header con logo
+                        _buildHeader(isDark),
 
-                      // Menú principal
-                      Expanded(
-                        child: _buildMainMenu(selectedIndex, isDark),
-                      ),
+                        // Menú principal
+                        Expanded(
+                          child: _buildMainMenu(selectedIndex, isDark),
+                        ),
 
-                      // Footer con toggle de tema
-                      _buildFooter(isDark),
-                    ],
+                        // Footer con toggle de tema
+                        _buildFooter(isDark),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
@@ -713,9 +823,7 @@ class _AdminSidebarState extends State<AdminSidebar>
               SizedBox(
                 width: double.infinity,
                 child: TextButton.icon(
-                  onPressed: () {
-                    context.read<AdminAuthCubit>().signOut();
-                  },
+                  onPressed: () => _showSignOutConfirmation(context),
                   icon: Icon(
                     Icons.logout,
                     size: 14,
@@ -871,9 +979,7 @@ class _AdminSidebarState extends State<AdminSidebar>
               SizedBox(
                 width: double.infinity,
                 child: TextButton.icon(
-                  onPressed: () {
-                    context.read<AdminAuthCubit>().signOut();
-                  },
+                  onPressed: () => _showSignOutConfirmation(context),
                   icon: Icon(
                     Icons.logout,
                     size: 14,
