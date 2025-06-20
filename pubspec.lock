@@ -212,11 +212,9 @@ packages:
   core:
     dependency: "direct main"
     description:
-      path: core
-      ref: c5198635fc7daf169addf08adb379b74061f7858
-      resolved-ref: c5198635fc7daf169addf08adb379b74061f7858
-      url: "git@github.com:Turbo-Team-Org/Turbo_Core.git"
-    source: git
+      path: "../Turbo_Core/core"
+      relative: true
+    source: path
     version: "0.1.0+1"
   cross_file:
     dependency: transitive

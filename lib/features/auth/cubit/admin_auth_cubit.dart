@@ -234,10 +234,10 @@ class AdminAuthCubit extends Cubit<AdminAuthState> with BaseCubit {
     // Super admin puede manejar cualquier lugar
     if (isSuperAdmin) return true;
 
-    // Business owner aprobado puede manejar sus lugares
-    // TODO: Implementar lógica cuando el core package tenga la propiedad approvedPlaceIds
-    if (isBusinessOwnerApproved) {
-      return true; // Por ahora permitir acceso a business owners aprobados
+    // Admin normal solo puede manejar sus propios lugares
+    final admin = currentAdminUser;
+    if (admin != null && admin.ownedPlaceIds.contains(placeId)) {
+      return true;
     }
 
     return false;
