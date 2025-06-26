@@ -12,9 +12,8 @@ dependencies:
     sdk: flutter
 
   # PAQUETE PRINCIPAL - contiene toda la lógica
-  core:
-    path: ../Turbo_Core/core
 
+  core:
     git:
       url: git@github.com:Turbo-Team-Org/Turbo_Core.git
       ref: 60766ba3b498e60a58da678df631dc9883d7b035
