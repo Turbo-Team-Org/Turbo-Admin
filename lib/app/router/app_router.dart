@@ -43,6 +43,9 @@ import 'package:turbo_admin/features/auth/pages/business_owner_registration_page
 // Business Owner Dashboard
 import 'package:turbo_admin/features/dashboard/pages/business_owner_dashboard_page.dart';
 
+// Reservations
+import 'package:turbo_admin/features/reservations/pages/reservation_dashboard_page.dart';
+
 // Simple global key for the router's navigator state, useful for contextless navigation if needed
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<NavigatorState> _shellNavigatorKey =
@@ -461,6 +464,17 @@ class AppRouter {
               // No 'new' user route as user creation is typically via Firebase Auth or other services, not direct admin forms.
             ],
           ),
+
+          // === Reservations ===
+          GoRoute(
+            path: '/reservations',
+            name: 'reservations',
+            pageBuilder: (context, state) => _buildPageWithSlideTransition(
+              context,
+              state,
+              const ReservationDashboardPage(),
+            ),
+          ),
         ],
       ),
     ],
@@ -500,6 +514,8 @@ class AppRouter {
         return 'Diagnóstico';
       case 'businessRequests':
         return 'Solicitudes de Business Owners';
+      case 'reservations':
+        return 'Reservaciones';
       default:
         return 'Turbo Admin';
     }

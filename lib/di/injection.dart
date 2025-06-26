@@ -16,6 +16,9 @@ import 'package:turbo_admin/features/dashboard/presentation/cubit/dashboard_cubi
     as dashboard_cubit;
 import 'package:turbo_admin/features/auth/cubit/admin_auth_cubit.dart';
 import 'package:turbo_admin/features/business_requests/cubit/business_requests_cubit.dart';
+import 'package:turbo_admin/features/reservations/cubit/reservation_dashboard_cubit.dart';
+import 'package:turbo_admin/features/reservations/cubit/reservation_management_cubit.dart';
+import 'package:turbo_admin/features/reservations/cubit/availability_settings_cubit.dart';
 
 /// Inicializa todas las dependencias específicas del UI del Admin Panel
 Future<void> initUIDependencies() async {
@@ -69,6 +72,7 @@ void _verifyCoreDependencies(GetIt di) {
     'CategoryRepository',
     'AuthenticationRepository',
     'AdminAuthRepository',
+    'ReservationRepository',
   ];
 
   for (final dependency in requiredDependencies) {
@@ -91,6 +95,9 @@ void _verifyCoreDependencies(GetIt di) {
           break;
         case 'AdminAuthRepository':
           di<AdminAuthRepository>();
+          break;
+        case 'ReservationRepository':
+          di<ReservationRepository>();
           break;
       }
       debugPrint('✅ $dependency registrado correctamente');
@@ -176,6 +183,31 @@ void _registerUICubits(GetIt di) {
         di<AdminAuthRepository>(),
       ));
   debugPrint('✅ BusinessRequestsCubit registrado');
+
+  // Gestión de Reservas (factory porque depende del placeId)
+  di.registerFactoryParam<ReservationDashboardCubit, String, void>(
+    (placeId, _) => ReservationDashboardCubit(
+      di<ReservationRepository>(),
+      placeId,
+    ),
+  );
+  debugPrint('✅ ReservationDashboardCubit registrado');
+
+  di.registerFactoryParam<ReservationManagementCubit, String, void>(
+    (placeId, _) => ReservationManagementCubit(
+      di<ReservationRepository>(),
+      placeId,
+    ),
+  );
+  debugPrint('✅ ReservationManagementCubit registrado');
+
+  di.registerFactoryParam<AvailabilitySettingsCubit, String, void>(
+    (placeId, _) => AvailabilitySettingsCubit(
+      di<ReservationRepository>(),
+      placeId,
+    ),
+  );
+  debugPrint('✅ AvailabilitySettingsCubit registrado');
 }
 
 void _registerDashboardCubit(GetIt di) {

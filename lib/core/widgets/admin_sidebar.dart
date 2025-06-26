@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:get_it/get_it.dart';
 import 'dart:ui';
-import 'package:core/core.dart';
 import 'theme_toggle_widget.dart';
 import 'package:turbo_admin/features/auth/cubit/admin_auth_cubit.dart';
 
@@ -37,13 +36,11 @@ class _AdminSidebarState extends State<AdminSidebar>
   }
 
   int _calculateSelectedIndex(BuildContext context) {
-    final GoRouterState routerState = GoRouterState.of(context);
-    final String? currentRouteName = routerState.name;
-    final String? topRouteName = routerState.topRoute?.name;
+    final routerState = GoRouterState.of(context);
+    final topRouteName = routerState.topRoute?.name;
+    final currentRouteName = routerState.name;
 
-    if (topRouteName == 'dashboard' || currentRouteName == 'dashboard') {
-      return 0;
-    }
+    if (topRouteName == 'dashboard') return 0;
     if (topRouteName == 'places' ||
         currentRouteName == 'newPlace' ||
         currentRouteName == 'editPlace') {
@@ -63,8 +60,7 @@ class _AdminSidebarState extends State<AdminSidebar>
       return 4;
     }
     if (topRouteName == 'users' || currentRouteName == 'manageUser') return 5;
-    if (topRouteName == 'businessRequests' ||
-        currentRouteName == 'businessRequests') return 6;
+    if (topRouteName == 'reservations') return 6;
 
     final String location = routerState.uri.toString();
     if (location.startsWith('/dashboard')) return 0;
@@ -73,7 +69,7 @@ class _AdminSidebarState extends State<AdminSidebar>
     if (location.startsWith('/reviews')) return 3;
     if (location.startsWith('/categories')) return 4;
     if (location.startsWith('/users')) return 5;
-    if (location.startsWith('/business-requests')) return 6;
+    if (location.startsWith('/reservations')) return 6;
 
     return 0;
   }
@@ -99,7 +95,7 @@ class _AdminSidebarState extends State<AdminSidebar>
         context.goNamed('users');
         break;
       case 6:
-        context.goNamed('businessRequests');
+        context.goNamed('reservations');
         break;
     }
   }
@@ -311,243 +307,223 @@ class _AdminSidebarState extends State<AdminSidebar>
   }
 
   Widget _buildMainMenu(int selectedIndex, bool isDark) {
-    return BlocBuilder<AdminAuthCubit, AdminAuthState>(
-      builder: (context, authState) {
-        // Verificar si es super admin
-        bool isSuperAdmin = false;
-        if (authState is AdminAuthenticatedAdmin) {
-          isSuperAdmin = authState.user.role.name == 'superAdmin';
-        }
+    final menuItems = [
+      _MenuItem(
+        icon: Icons.dashboard_rounded,
+        label: 'Dashboard',
+        index: 0,
+      ),
+      _MenuItem(
+        icon: Icons.location_on_rounded,
+        label: 'Lugares',
+        index: 1,
+      ),
+      _MenuItem(
+        icon: Icons.event_rounded,
+        label: 'Eventos',
+        index: 2,
+      ),
+      _MenuItem(
+        icon: Icons.rate_review_rounded,
+        label: 'Reseñas',
+        index: 3,
+      ),
+      _MenuItem(
+        icon: Icons.category_rounded,
+        label: 'Categorías',
+        index: 4,
+      ),
+      _MenuItem(
+        icon: Icons.people_rounded,
+        label: 'Usuarios',
+        index: 5,
+      ),
+      _MenuItem(
+        icon: Icons.book_online_rounded,
+        label: 'Reservas',
+        index: 6,
+      ),
+    ];
 
-        final menuItems = [
-          _MenuItem(
-            icon: Icons.dashboard_rounded,
-            label: 'Dashboard',
-            index: 0,
-          ),
-          _MenuItem(
-            icon: Icons.location_on_rounded,
-            label: 'Lugares',
-            index: 1,
-          ),
-          _MenuItem(
-            icon: Icons.event_rounded,
-            label: 'Eventos',
-            index: 2,
-          ),
-          _MenuItem(
-            icon: Icons.rate_review_rounded,
-            label: 'Reseñas',
-            index: 3,
-          ),
-          _MenuItem(
-            icon: Icons.category_rounded,
-            label: 'Categorías',
-            index: 4,
-          ),
-          _MenuItem(
-            icon: Icons.people_rounded,
-            label: 'Usuarios',
-            index: 5,
-          ),
-          // Solo mostrar para super admins
-          if (isSuperAdmin)
-            _MenuItem(
-              icon: Icons.business_center_rounded,
-              label: 'Solicitudes',
-              index: 6,
-            ),
-        ];
-
-        return SingleChildScrollView(
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Text(
-                    'NAVEGACIÓN',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      fontFamily: 'MuseoSans',
-                      color: isDark
-                          ? const Color(0xFF71717A)
-                          : const Color(0xFF9CA3AF),
-                      letterSpacing: 1.2,
-                    ),
-                  ),
+    return Expanded(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Text(
+                'NAVEGACIÓN',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  fontFamily: 'MuseoSans',
+                  color: isDark
+                      ? const Color(0xFF71717A)
+                      : const Color(0xFF9CA3AF),
+                  letterSpacing: 1.2,
                 ),
-                const SizedBox(height: 8),
-                ...menuItems.map((item) {
-                  final isSelected = selectedIndex == item.index;
-                  final isHovered = _hoveredIndex == item.index;
+              ),
+            ),
+            const SizedBox(height: 8),
+            ...menuItems.map((item) {
+              final isSelected = selectedIndex == item.index;
+              final isHovered = _hoveredIndex == item.index;
 
-                  return TweenAnimationBuilder<double>(
-                    duration: const Duration(milliseconds: 200),
-                    tween: Tween(
-                        begin: 0.0, end: isSelected || isHovered ? 1.0 : 0.0),
-                    builder: (context, animation, child) {
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 4),
-                        child: MouseRegion(
-                          onEnter: (_) =>
-                              setState(() => _hoveredIndex = item.index),
-                          onExit: (_) => setState(() => _hoveredIndex = null),
-                          child: GestureDetector(
-                            onTap: () => _navigateToIndex(item.index),
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              curve: Curves.easeOutCubic,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 14),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(16),
-                                gradient: isSelected
-                                    ? LinearGradient(
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                        colors: isDark
-                                            ? [
-                                                const Color(0xFFFF5757),
-                                                const Color(0xFFFF8A65)
-                                              ]
-                                            : [
-                                                const Color(0xFFE53E3E),
-                                                const Color(0xFFFF6B35)
-                                              ],
-                                      )
-                                    : LinearGradient(
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                        colors: isDark
-                                            ? [
-                                                const Color(0xFFFF5757)
-                                                    .withOpacity(
-                                                        animation * 0.15),
-                                                const Color(0xFFFF8A65)
-                                                    .withOpacity(
-                                                        animation * 0.15),
-                                              ]
-                                            : [
-                                                const Color(0xFFE53E3E)
-                                                    .withOpacity(
-                                                        animation * 0.1),
-                                                const Color(0xFFFF6B35)
-                                                    .withOpacity(
-                                                        animation * 0.1),
-                                              ],
-                                      ),
-                                boxShadow: isSelected
-                                    ? [
-                                        BoxShadow(
-                                          offset: const Offset(0, 4),
-                                          blurRadius: 12,
-                                          color: isDark
-                                              ? const Color(0xFFFF5757)
-                                                  .withOpacity(0.3)
-                                              : const Color(0xFFE53E3E)
-                                                  .withOpacity(0.3),
-                                        ),
-                                      ]
-                                    : null,
-                              ),
-                              child: Row(
-                                children: [
-                                  AnimatedContainer(
-                                    duration: const Duration(milliseconds: 200),
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(10),
-                                      color: isSelected
-                                          ? Colors.white.withOpacity(0.2)
-                                          : Colors.transparent,
+              return TweenAnimationBuilder<double>(
+                duration: const Duration(milliseconds: 200),
+                tween:
+                    Tween(begin: 0.0, end: isSelected || isHovered ? 1.0 : 0.0),
+                builder: (context, animation, child) {
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 4),
+                    child: MouseRegion(
+                      onEnter: (_) =>
+                          setState(() => _hoveredIndex = item.index),
+                      onExit: (_) => setState(() => _hoveredIndex = null),
+                      child: GestureDetector(
+                        onTap: () => _navigateToIndex(item.index),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          curve: Curves.easeOutCubic,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 14),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            gradient: isSelected
+                                ? LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: isDark
+                                        ? [
+                                            const Color(0xFFFF5757),
+                                            const Color(0xFFFF8A65)
+                                          ]
+                                        : [
+                                            const Color(0xFFE53E3E),
+                                            const Color(0xFFFF6B35)
+                                          ],
+                                  )
+                                : LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: isDark
+                                        ? [
+                                            const Color(0xFFFF5757)
+                                                .withOpacity(animation * 0.15),
+                                            const Color(0xFFFF8A65)
+                                                .withOpacity(animation * 0.15),
+                                          ]
+                                        : [
+                                            const Color(0xFFE53E3E)
+                                                .withOpacity(animation * 0.1),
+                                            const Color(0xFFFF6B35)
+                                                .withOpacity(animation * 0.1),
+                                          ],
+                                  ),
+                            boxShadow: isSelected
+                                ? [
+                                    BoxShadow(
+                                      offset: const Offset(0, 4),
+                                      blurRadius: 12,
+                                      color: isDark
+                                          ? const Color(0xFFFF5757)
+                                              .withOpacity(0.3)
+                                          : const Color(0xFFE53E3E)
+                                              .withOpacity(0.3),
                                     ),
-                                    child: Icon(
-                                      item.icon,
-                                      size: 22,
-                                      color: isSelected
-                                          ? Colors.white
-                                          : Color.lerp(
-                                              isDark
-                                                  ? const Color(0xFFA1A1AA)
-                                                  : const Color(0xFF6B7280),
-                                              isDark
+                                  ]
+                                : null,
+                          ),
+                          child: Row(
+                            children: [
+                              AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10),
+                                  color: isSelected
+                                      ? Colors.white.withOpacity(0.2)
+                                      : Colors.transparent,
+                                ),
+                                child: Icon(
+                                  item.icon,
+                                  size: 22,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : Color.lerp(
+                                          isDark
+                                              ? const Color(0xFFA1A1AA)
+                                              : const Color(0xFF6B7280),
+                                          isDark
+                                              ? const Color(0xFFFF5757)
+                                              : const Color(0xFFE53E3E),
+                                          animation,
+                                        ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  item.label,
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w700
+                                        : FontWeight.w600,
+                                    fontFamily: 'MuseoSans',
+                                    color: isSelected
+                                        ? Colors.white
+                                        : Color.lerp(
+                                            isDark
+                                                ? const Color(0xFFF8FAFC)
+                                                : const Color(0xFF374151),
+                                            isDark
+                                                ? const Color(0xFFFF5757)
+                                                : const Color(0xFFE53E3E),
+                                            animation,
+                                          ),
+                                    letterSpacing: 0.1,
+                                  ),
+                                ),
+                              ),
+                              if (isSelected || isHovered)
+                                TweenAnimationBuilder<double>(
+                                  duration: const Duration(milliseconds: 200),
+                                  tween: Tween(begin: 0.0, end: 1.0),
+                                  builder: (context, scaleAnimation, child) {
+                                    return Transform.scale(
+                                      scale: scaleAnimation,
+                                      child: Container(
+                                        width: 6,
+                                        height: 6,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: isSelected
+                                              ? Colors.white
+                                              : isDark
                                                   ? const Color(0xFFFF5757)
                                                   : const Color(0xFFE53E3E),
-                                              animation,
-                                            ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Text(
-                                      item.label,
-                                      style: TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: isSelected
-                                            ? FontWeight.w700
-                                            : FontWeight.w600,
-                                        fontFamily: 'MuseoSans',
-                                        color: isSelected
-                                            ? Colors.white
-                                            : Color.lerp(
-                                                isDark
-                                                    ? const Color(0xFFF8FAFC)
-                                                    : const Color(0xFF374151),
-                                                isDark
-                                                    ? const Color(0xFFFF5757)
-                                                    : const Color(0xFFE53E3E),
-                                                animation,
-                                              ),
-                                        letterSpacing: 0.1,
+                                        ),
                                       ),
-                                    ),
-                                  ),
-                                  if (isSelected || isHovered)
-                                    TweenAnimationBuilder<double>(
-                                      duration:
-                                          const Duration(milliseconds: 200),
-                                      tween: Tween(begin: 0.0, end: 1.0),
-                                      builder:
-                                          (context, scaleAnimation, child) {
-                                        return Transform.scale(
-                                          scale: scaleAnimation,
-                                          child: Container(
-                                            width: 6,
-                                            height: 6,
-                                            decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              color: isSelected
-                                                  ? Colors.white
-                                                  : isDark
-                                                      ? const Color(0xFFFF5757)
-                                                      : const Color(0xFFE53E3E),
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                ],
-                              ),
-                            ),
+                                    );
+                                  },
+                                ),
+                            ],
                           ),
                         ),
-                      );
-                    },
+                      ),
+                    ),
                   );
-                }),
-                // Espaciado adicional al final para mejor UX del scroll
-                const SizedBox(height: 16),
-              ],
-            ),
-          ),
-        );
-      },
+                },
+              );
+            }),
+            // Espaciado adicional al final para mejor UX del scroll
+            const SizedBox(height: 32),
+          ],
+        ),
+      ),
     );
   }
 
@@ -578,13 +554,117 @@ class _AdminSidebarState extends State<AdminSidebar>
 
                 const SizedBox(height: 24),
 
-                // Usuario actual - mostrar información según el tipo de usuario
+                // Usuario actual
                 if (state is AdminAuthenticatedAdmin) ...[
-                  _buildAdminUserInfo(context, state.user, isDark),
-                ] else if (state is AdminAuthenticatedBusinessOwner) ...[
-                  _buildBusinessOwnerUserInfo(context, state.request, isDark),
-                ] else if (state is AdminAuthBusinessOwnerRegistered) ...[
-                  _buildBusinessOwnerUserInfo(context, state.request, isDark),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: isDark
+                          ? const Color(0xFF1F2937).withOpacity(0.5)
+                          : const Color(0xFFF3F4F6),
+                      border: Border.all(
+                        color: isDark
+                            ? const Color(0xFFFF5757).withOpacity(0.1)
+                            : const Color(0xFFE53E3E).withOpacity(0.1),
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: LinearGradient(
+                                  colors: isDark
+                                      ? [
+                                          const Color(0xFFFF5757),
+                                          const Color(0xFFFF8A65)
+                                        ]
+                                      : [
+                                          const Color(0xFFE53E3E),
+                                          const Color(0xFFFF6B35)
+                                        ],
+                                ),
+                              ),
+                              child: const Icon(
+                                Icons.admin_panel_settings,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    state.user.displayName ?? 'Admin',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      fontFamily: 'MuseoSans',
+                                      color: isDark
+                                          ? const Color(0xFFF8FAFC)
+                                          : const Color(0xFF374151),
+                                    ),
+                                  ),
+                                  Text(
+                                    state.user.email,
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontFamily: 'MuseoSans',
+                                      color: isDark
+                                          ? const Color(0xFF9CA3AF)
+                                          : const Color(0xFF6B7280),
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          width: double.infinity,
+                          child: TextButton.icon(
+                            onPressed: () {
+                              context.read<AdminAuthCubit>().signOut();
+                            },
+                            icon: Icon(
+                              Icons.logout,
+                              size: 14,
+                              color: isDark
+                                  ? const Color(0xFFFF5757)
+                                  : const Color(0xFFE53E3E),
+                            ),
+                            label: Text(
+                              'Cerrar Sesión',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontFamily: 'MuseoSans',
+                                fontWeight: FontWeight.w600,
+                                color: isDark
+                                    ? const Color(0xFFFF5757)
+                                    : const Color(0xFFE53E3E),
+                              ),
+                            ),
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                 ],
 
                 // Toggle de tema
@@ -610,297 +690,6 @@ class _AdminSidebarState extends State<AdminSidebar>
           );
         },
       ),
-    );
-  }
-
-  Widget _buildAdminUserInfo(
-      BuildContext context, AdminUser user, bool isDark) {
-    final isSuperAdmin = user.role.name == 'superAdmin';
-
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            color: isDark
-                ? const Color(0xFF1F2937).withOpacity(0.5)
-                : const Color(0xFFF3F4F6),
-            border: Border.all(
-              color: isDark
-                  ? const Color(0xFFFF5757).withOpacity(0.1)
-                  : const Color(0xFFE53E3E).withOpacity(0.1),
-            ),
-          ),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        colors: isSuperAdmin
-                            ? [const Color(0xFF7C3AED), const Color(0xFFA855F7)]
-                            : isDark
-                                ? [
-                                    const Color(0xFFFF5757),
-                                    const Color(0xFFFF8A65)
-                                  ]
-                                : [
-                                    const Color(0xFFE53E3E),
-                                    const Color(0xFFFF6B35)
-                                  ],
-                      ),
-                    ),
-                    child: Icon(
-                      isSuperAdmin
-                          ? Icons.admin_panel_settings
-                          : Icons.business,
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          user.displayName ?? 'Admin',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            fontFamily: 'MuseoSans',
-                            color: isDark
-                                ? const Color(0xFFF8FAFC)
-                                : const Color(0xFF374151),
-                          ),
-                        ),
-                        Text(
-                          isSuperAdmin
-                              ? 'Super Administrador'
-                              : 'Administrador',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500,
-                            fontFamily: 'MuseoSans',
-                            color: isDark
-                                ? const Color(0xFF9CA3AF)
-                                : const Color(0xFF6B7280),
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          user.email,
-                          style: TextStyle(
-                            fontSize: 9,
-                            fontFamily: 'MuseoSans',
-                            color: isDark
-                                ? const Color(0xFF71717A)
-                                : const Color(0xFF9CA3AF),
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: TextButton.icon(
-                  onPressed: () {
-                    context.read<AdminAuthCubit>().signOut();
-                  },
-                  icon: Icon(
-                    Icons.logout,
-                    size: 14,
-                    color: isDark
-                        ? const Color(0xFFFF5757)
-                        : const Color(0xFFE53E3E),
-                  ),
-                  label: Text(
-                    'Cerrar Sesión',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontFamily: 'MuseoSans',
-                      fontWeight: FontWeight.w600,
-                      color: isDark
-                          ? const Color(0xFFFF5757)
-                          : const Color(0xFFE53E3E),
-                    ),
-                  ),
-                  style: TextButton.styleFrom(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-      ],
-    );
-  }
-
-  Widget _buildBusinessOwnerUserInfo(
-      BuildContext context, BusinessOwnerRequest request, bool isDark) {
-    Color statusColor;
-    String statusText;
-    IconData statusIcon;
-
-    switch (request.status) {
-      case BusinessOwnerRequestStatus.pending:
-        statusColor = Colors.orange;
-        statusText = 'Pendiente';
-        statusIcon = Icons.hourglass_empty;
-        break;
-      case BusinessOwnerRequestStatus.reviewing:
-        statusColor = Colors.blue;
-        statusText = 'En Revisión';
-        statusIcon = Icons.rate_review;
-        break;
-      case BusinessOwnerRequestStatus.needsMoreInfo:
-        statusColor = Colors.amber;
-        statusText = 'Más Info';
-        statusIcon = Icons.info_outline;
-        break;
-      case BusinessOwnerRequestStatus.approved:
-        statusColor = Colors.green;
-        statusText = 'Aprobado';
-        statusIcon = Icons.verified_user;
-        break;
-      case BusinessOwnerRequestStatus.rejected:
-        statusColor = Colors.red;
-        statusText = 'Rechazado';
-        statusIcon = Icons.cancel;
-        break;
-    }
-
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            color: isDark
-                ? const Color(0xFF1F2937).withOpacity(0.5)
-                : const Color(0xFFF3F4F6),
-            border: Border.all(
-              color: statusColor.withOpacity(0.3),
-            ),
-          ),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: statusColor.withOpacity(0.2),
-                    ),
-                    child: Icon(
-                      statusIcon,
-                      color: statusColor,
-                      size: 16,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          request.displayName,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            fontFamily: 'MuseoSans',
-                            color: isDark
-                                ? const Color(0xFFF8FAFC)
-                                : const Color(0xFF374151),
-                          ),
-                        ),
-                        Text(
-                          request.businessName,
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500,
-                            fontFamily: 'MuseoSans',
-                            color: isDark
-                                ? const Color(0xFF9CA3AF)
-                                : const Color(0xFF6B7280),
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: statusColor.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                statusText,
-                                style: TextStyle(
-                                  fontSize: 8,
-                                  fontWeight: FontWeight.bold,
-                                  color: statusColor,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: TextButton.icon(
-                  onPressed: () {
-                    context.read<AdminAuthCubit>().signOut();
-                  },
-                  icon: Icon(
-                    Icons.logout,
-                    size: 14,
-                    color: statusColor,
-                  ),
-                  label: Text(
-                    'Cerrar Sesión',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontFamily: 'MuseoSans',
-                      fontWeight: FontWeight.w600,
-                      color: statusColor,
-                    ),
-                  ),
-                  style: TextButton.styleFrom(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-      ],
     );
   }
 }
