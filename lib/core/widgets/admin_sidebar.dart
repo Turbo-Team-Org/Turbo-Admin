@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:get_it/get_it.dart';
@@ -100,85 +101,194 @@ class _AdminSidebarState extends State<AdminSidebar>
     }
   }
 
+  void _showSignOutConfirmation(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          backgroundColor: isDark ? const Color(0xFF1F2937) : Colors.white,
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: (isDark
+                          ? const Color(0xFFFF5757)
+                          : const Color(0xFFE53E3E))
+                      .withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.logout,
+                  color: isDark
+                      ? const Color(0xFFFF5757)
+                      : const Color(0xFFE53E3E),
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Cerrar Sesión',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  fontFamily: 'MuseoSans',
+                  color: isDark
+                      ? const Color(0xFFF8FAFC)
+                      : const Color(0xFF111827),
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            '¿Estás seguro de que quieres cerrar sesión?',
+            style: TextStyle(
+              fontSize: 14,
+              fontFamily: 'MuseoSans',
+              color: isDark ? const Color(0xFFD1D5DB) : const Color(0xFF6B7280),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(
+                'Cancelar',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontFamily: 'MuseoSans',
+                  fontWeight: FontWeight.w600,
+                  color: isDark
+                      ? const Color(0xFF9CA3AF)
+                      : const Color(0xFF6B7280),
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                context.read<AdminAuthCubit>().signOut();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    isDark ? const Color(0xFFFF5757) : const Color(0xFFE53E3E),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              ),
+              child: Text(
+                'Cerrar Sesión',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontFamily: 'MuseoSans',
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final selectedIndex = _calculateSelectedIndex(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return AnimatedBuilder(
-      animation: _animationController,
-      builder: (context, child) {
-        return SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(-1, 0),
-            end: Offset.zero,
-          ).animate(CurvedAnimation(
-            parent: _animationController,
-            curve: Curves.easeOutCubic,
-          )),
-          child: Container(
-            width: 280,
-            height: double.infinity,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: isDark
-                    ? [
-                        const Color(0xFF0F0F23),
-                        const Color(0xFF1A1B3A),
-                        const Color(0xFF1E1E3F),
-                      ]
-                    : [
-                        Colors.white,
-                        const Color(0xFFFEF7F7),
-                        const Color(0xFFFDF2F2),
-                      ],
-              ),
-              boxShadow: [
-                BoxShadow(
-                  offset: const Offset(4, 0),
-                  blurRadius: 30,
-                  color: isDark
-                      ? const Color(0xFFFF5757).withOpacity(0.1)
-                      : const Color(0xFFE53E3E).withOpacity(0.1),
+    return BlocListener<AdminAuthCubit, AdminAuthState>(
+      listener: (context, state) {
+        if (state is AdminAuthUnauthenticated) {
+          if (kDebugMode) {
+            debugPrint(
+                '🔄 AdminSidebar: Usuario desautenticado, redirigiendo a login');
+          }
+          // Redirigir al login cuando el usuario se desautentica
+          context.go('/login');
+        }
+      },
+      child: AnimatedBuilder(
+        animation: _animationController,
+        builder: (context, child) {
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(-1, 0),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: _animationController,
+              curve: Curves.easeOutCubic,
+            )),
+            child: Container(
+              width: 280,
+              height: double.infinity,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: isDark
+                      ? [
+                          const Color(0xFF0F0F23),
+                          const Color(0xFF1A1B3A),
+                          const Color(0xFF1E1E3F),
+                        ]
+                      : [
+                          Colors.white,
+                          const Color(0xFFFEF7F7),
+                          const Color(0xFFFDF2F2),
+                        ],
                 ),
-              ],
-            ),
-            child: ClipRRect(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border(
-                      right: BorderSide(
-                        color: isDark
-                            ? const Color(0xFFFF5757).withOpacity(0.1)
-                            : const Color(0xFFE53E3E).withOpacity(0.1),
-                        width: 1,
+                boxShadow: [
+                  BoxShadow(
+                    offset: const Offset(4, 0),
+                    blurRadius: 30,
+                    color: isDark
+                        ? const Color(0xFFFF5757).withOpacity(0.1)
+                        : const Color(0xFFE53E3E).withOpacity(0.1),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border(
+                        right: BorderSide(
+                          color: isDark
+                              ? const Color(0xFFFF5757).withOpacity(0.1)
+                              : const Color(0xFFE53E3E).withOpacity(0.1),
+                          width: 1,
+                        ),
                       ),
                     ),
-                  ),
-                  child: Column(
-                    children: [
-                      // Header con logo
-                      _buildHeader(isDark),
+                    child: Column(
+                      children: [
+                        // Header con logo
+                        _buildHeader(isDark),
 
-                      // Menú principal
-                      Expanded(
-                        child: _buildMainMenu(selectedIndex, isDark),
-                      ),
+                        // Menú principal
+                        Expanded(
+                          child: _buildMainMenu(selectedIndex, isDark),
+                        ),
 
-                      // Footer con toggle de tema
-                      _buildFooter(isDark),
-                    ],
+                        // Footer con toggle de tema
+                        _buildFooter(isDark),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
@@ -556,115 +666,11 @@ class _AdminSidebarState extends State<AdminSidebar>
 
                 // Usuario actual
                 if (state is AdminAuthenticatedAdmin) ...[
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      color: isDark
-                          ? const Color(0xFF1F2937).withOpacity(0.5)
-                          : const Color(0xFFF3F4F6),
-                      border: Border.all(
-                        color: isDark
-                            ? const Color(0xFFFF5757).withOpacity(0.1)
-                            : const Color(0xFFE53E3E).withOpacity(0.1),
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              width: 32,
-                              height: 32,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: LinearGradient(
-                                  colors: isDark
-                                      ? [
-                                          const Color(0xFFFF5757),
-                                          const Color(0xFFFF8A65)
-                                        ]
-                                      : [
-                                          const Color(0xFFE53E3E),
-                                          const Color(0xFFFF6B35)
-                                        ],
-                                ),
-                              ),
-                              child: const Icon(
-                                Icons.admin_panel_settings,
-                                color: Colors.white,
-                                size: 16,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    state.user.displayName ?? 'Admin',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      fontFamily: 'MuseoSans',
-                                      color: isDark
-                                          ? const Color(0xFFF8FAFC)
-                                          : const Color(0xFF374151),
-                                    ),
-                                  ),
-                                  Text(
-                                    state.user.email,
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontFamily: 'MuseoSans',
-                                      color: isDark
-                                          ? const Color(0xFF9CA3AF)
-                                          : const Color(0xFF6B7280),
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        SizedBox(
-                          width: double.infinity,
-                          child: TextButton.icon(
-                            onPressed: () {
-                              context.read<AdminAuthCubit>().signOut();
-                            },
-                            icon: Icon(
-                              Icons.logout,
-                              size: 14,
-                              color: isDark
-                                  ? const Color(0xFFFF5757)
-                                  : const Color(0xFFE53E3E),
-                            ),
-                            label: Text(
-                              'Cerrar Sesión',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontFamily: 'MuseoSans',
-                                fontWeight: FontWeight.w600,
-                                color: isDark
-                                    ? const Color(0xFFFF5757)
-                                    : const Color(0xFFE53E3E),
-                              ),
-                            ),
-                            style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
-                              minimumSize: Size.zero,
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
+                  _buildAdminUserInfo(context, state.user, isDark),
+                ] else if (state is AdminAuthenticatedBusinessOwner) ...[
+                  _buildBusinessOwnerUserInfo(context, state.request, isDark),
+                ] else if (state is AdminAuthBusinessOwnerRegistered) ...[
+                  _buildBusinessOwnerUserInfo(context, state.request, isDark),
                 ],
 
                 // Toggle de tema
@@ -690,6 +696,293 @@ class _AdminSidebarState extends State<AdminSidebar>
           );
         },
       ),
+    );
+  }
+
+  Widget _buildAdminUserInfo(
+      BuildContext context, AdminUser user, bool isDark) {
+    final isSuperAdmin = user.role.name == 'superAdmin';
+
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            color: isDark
+                ? const Color(0xFF1F2937).withOpacity(0.5)
+                : const Color(0xFFF3F4F6),
+            border: Border.all(
+              color: isDark
+                  ? const Color(0xFFFF5757).withOpacity(0.1)
+                  : const Color(0xFFE53E3E).withOpacity(0.1),
+            ),
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: isSuperAdmin
+                            ? [const Color(0xFF7C3AED), const Color(0xFFA855F7)]
+                            : isDark
+                                ? [
+                                    const Color(0xFFFF5757),
+                                    const Color(0xFFFF8A65)
+                                  ]
+                                : [
+                                    const Color(0xFFE53E3E),
+                                    const Color(0xFFFF6B35)
+                                  ],
+                      ),
+                    ),
+                    child: Icon(
+                      isSuperAdmin
+                          ? Icons.admin_panel_settings
+                          : Icons.business,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          user.displayName ?? 'Admin',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            fontFamily: 'MuseoSans',
+                            color: isDark
+                                ? const Color(0xFFF8FAFC)
+                                : const Color(0xFF374151),
+                          ),
+                        ),
+                        Text(
+                          isSuperAdmin
+                              ? 'Super Administrador'
+                              : 'Administrador',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                            fontFamily: 'MuseoSans',
+                            color: isDark
+                                ? const Color(0xFF9CA3AF)
+                                : const Color(0xFF6B7280),
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          user.email,
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontFamily: 'MuseoSans',
+                            color: isDark
+                                ? const Color(0xFF71717A)
+                                : const Color(0xFF9CA3AF),
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton.icon(
+                  onPressed: () => _showSignOutConfirmation(context),
+                  icon: Icon(
+                    Icons.logout,
+                    size: 14,
+                    color: isDark
+                        ? const Color(0xFFFF5757)
+                        : const Color(0xFFE53E3E),
+                  ),
+                  label: Text(
+                    'Cerrar Sesión',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontFamily: 'MuseoSans',
+                      fontWeight: FontWeight.w600,
+                      color: isDark
+                          ? const Color(0xFFFF5757)
+                          : const Color(0xFFE53E3E),
+                    ),
+                  ),
+                  style: TextButton.styleFrom(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
+  Widget _buildBusinessOwnerUserInfo(
+      BuildContext context, BusinessOwnerRequest request, bool isDark) {
+    Color statusColor;
+    String statusText;
+    IconData statusIcon;
+
+    switch (request.status) {
+      case BusinessOwnerRequestStatus.pending:
+        statusColor = Colors.orange;
+        statusText = 'Pendiente';
+        statusIcon = Icons.hourglass_empty;
+        break;
+      case BusinessOwnerRequestStatus.reviewing:
+        statusColor = Colors.blue;
+        statusText = 'En Revisión';
+        statusIcon = Icons.rate_review;
+        break;
+      case BusinessOwnerRequestStatus.needsMoreInfo:
+        statusColor = Colors.amber;
+        statusText = 'Más Info';
+        statusIcon = Icons.info_outline;
+        break;
+      case BusinessOwnerRequestStatus.approved:
+        statusColor = Colors.green;
+        statusText = 'Aprobado';
+        statusIcon = Icons.verified_user;
+        break;
+      case BusinessOwnerRequestStatus.rejected:
+        statusColor = Colors.red;
+        statusText = 'Rechazado';
+        statusIcon = Icons.cancel;
+        break;
+    }
+
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            color: isDark
+                ? const Color(0xFF1F2937).withOpacity(0.5)
+                : const Color(0xFFF3F4F6),
+            border: Border.all(
+              color: statusColor.withOpacity(0.3),
+            ),
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: statusColor.withOpacity(0.2),
+                    ),
+                    child: Icon(
+                      statusIcon,
+                      color: statusColor,
+                      size: 16,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          request.displayName,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            fontFamily: 'MuseoSans',
+                            color: isDark
+                                ? const Color(0xFFF8FAFC)
+                                : const Color(0xFF374151),
+                          ),
+                        ),
+                        Text(
+                          request.businessName,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                            fontFamily: 'MuseoSans',
+                            color: isDark
+                                ? const Color(0xFF9CA3AF)
+                                : const Color(0xFF6B7280),
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: statusColor.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                statusText,
+                                style: TextStyle(
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.bold,
+                                  color: statusColor,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton.icon(
+                  onPressed: () => _showSignOutConfirmation(context),
+                  icon: Icon(
+                    Icons.logout,
+                    size: 14,
+                    color: statusColor,
+                  ),
+                  label: Text(
+                    'Cerrar Sesión',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontFamily: 'MuseoSans',
+                      fontWeight: FontWeight.w600,
+                      color: statusColor,
+                    ),
+                  ),
+                  style: TextButton.styleFrom(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
     );
   }
 }

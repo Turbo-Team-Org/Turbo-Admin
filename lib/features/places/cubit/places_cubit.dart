@@ -4,6 +4,8 @@ import 'package:core/core.dart';
 import 'package:turbo_admin/core/state_management/base_cubit.dart'; // For Place model and PlaceRepository/PlaceService
 import 'package:turbo_admin/features/places/cubit/places_state.dart';
 import 'package:turbo_admin/features/places/cubit/place_form_cubit.dart';
+import 'package:get_it/get_it.dart';
+import 'package:turbo_admin/features/auth/cubit/admin_auth_cubit.dart';
 
 /// Cubit for managing places state and operations
 class PlacesCubit extends Cubit<PlacesState> with BaseCubit {
@@ -54,6 +56,20 @@ class PlacesCubit extends Cubit<PlacesState> with BaseCubit {
     secureEmit(PlacesLoading());
     try {
       await _placeRepository.deletePlace(placeId);
+
+      // ACTUALIZAR ownedPlaceIds del admin autenticado
+      final adminAuthCubit = GetIt.instance<AdminAuthCubit>();
+      final currentAdmin = adminAuthCubit.currentAdminUser;
+      if (currentAdmin != null &&
+          currentAdmin.ownedPlaceIds.contains(placeId)) {
+        final updatedOwnedPlaceIds =
+            List<String>.from(currentAdmin.ownedPlaceIds)..remove(placeId);
+        await adminAuthCubit.updateOwnedPlaces(updatedOwnedPlaceIds);
+
+        // Forzar recarga del usuario admin desde backend
+        await adminAuthCubit.checkAuthStatus();
+      }
+
       // Si el estado anterior era PlacesLoaded, actualizamos la lista sin recargar
       if (previousState is PlacesLoaded) {
         final updatedPlaces =

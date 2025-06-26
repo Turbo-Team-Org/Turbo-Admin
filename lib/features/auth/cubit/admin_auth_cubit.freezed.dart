@@ -14,7 +14,12 @@ part of 'admin_auth_cubit.dart';
 T _$identity<T>(T value) => value;
 
 /// @nodoc
-mixin _$AdminAuthState {
+mixin _$AdminAuthState implements DiagnosticableTreeMixin {
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    properties..add(DiagnosticsProperty('type', 'AdminAuthState'));
+  }
+
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||
@@ -25,7 +30,7 @@ mixin _$AdminAuthState {
   int get hashCode => runtimeType.hashCode;
 
   @override
-  String toString() {
+  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
     return 'AdminAuthState()';
   }
 }
@@ -37,8 +42,13 @@ class $AdminAuthStateCopyWith<$Res> {
 
 /// @nodoc
 
-class AdminAuthInitial implements AdminAuthState {
+class AdminAuthInitial with DiagnosticableTreeMixin implements AdminAuthState {
   const AdminAuthInitial();
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    properties..add(DiagnosticsProperty('type', 'AdminAuthState.initial'));
+  }
 
   @override
   bool operator ==(Object other) {
@@ -50,15 +60,20 @@ class AdminAuthInitial implements AdminAuthState {
   int get hashCode => runtimeType.hashCode;
 
   @override
-  String toString() {
+  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
     return 'AdminAuthState.initial()';
   }
 }
 
 /// @nodoc
 
-class AdminAuthLoading implements AdminAuthState {
+class AdminAuthLoading with DiagnosticableTreeMixin implements AdminAuthState {
   const AdminAuthLoading();
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    properties..add(DiagnosticsProperty('type', 'AdminAuthState.loading'));
+  }
 
   @override
   bool operator ==(Object other) {
@@ -70,14 +85,16 @@ class AdminAuthLoading implements AdminAuthState {
   int get hashCode => runtimeType.hashCode;
 
   @override
-  String toString() {
+  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
     return 'AdminAuthState.loading()';
   }
 }
 
 /// @nodoc
 
-class AdminAuthenticatedAdmin implements AdminAuthState {
+class AdminAuthenticatedAdmin
+    with DiagnosticableTreeMixin
+    implements AdminAuthState {
   const AdminAuthenticatedAdmin(this.user);
 
   final AdminUser user;
@@ -91,6 +108,13 @@ class AdminAuthenticatedAdmin implements AdminAuthState {
           this, _$identity);
 
   @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    properties
+      ..add(DiagnosticsProperty('type', 'AdminAuthState.authenticatedAdmin'))
+      ..add(DiagnosticsProperty('user', user));
+  }
+
+  @override
   bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
@@ -102,7 +126,7 @@ class AdminAuthenticatedAdmin implements AdminAuthState {
   int get hashCode => Object.hash(runtimeType, user);
 
   @override
-  String toString() {
+  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
     return 'AdminAuthState.authenticatedAdmin(user: $user)';
   }
 }
@@ -154,7 +178,9 @@ class _$AdminAuthenticatedAdminCopyWithImpl<$Res>
 
 /// @nodoc
 
-class AdminAuthenticatedBusinessOwner implements AdminAuthState {
+class AdminAuthenticatedBusinessOwner
+    with DiagnosticableTreeMixin
+    implements AdminAuthState {
   const AdminAuthenticatedBusinessOwner(this.request);
 
   final BusinessOwnerRequest request;
@@ -168,6 +194,14 @@ class AdminAuthenticatedBusinessOwner implements AdminAuthState {
           AdminAuthenticatedBusinessOwner>(this, _$identity);
 
   @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    properties
+      ..add(DiagnosticsProperty(
+          'type', 'AdminAuthState.authenticatedBusinessOwner'))
+      ..add(DiagnosticsProperty('request', request));
+  }
+
+  @override
   bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
@@ -179,7 +213,7 @@ class AdminAuthenticatedBusinessOwner implements AdminAuthState {
   int get hashCode => Object.hash(runtimeType, request);
 
   @override
-  String toString() {
+  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
     return 'AdminAuthState.authenticatedBusinessOwner(request: $request)';
   }
 }
@@ -232,7 +266,9 @@ class _$AdminAuthenticatedBusinessOwnerCopyWithImpl<$Res>
 
 /// @nodoc
 
-class AdminAuthBusinessOwnerRegistered implements AdminAuthState {
+class AdminAuthBusinessOwnerRegistered
+    with DiagnosticableTreeMixin
+    implements AdminAuthState {
   const AdminAuthBusinessOwnerRegistered(this.request);
 
   final BusinessOwnerRequest request;
@@ -246,6 +282,14 @@ class AdminAuthBusinessOwnerRegistered implements AdminAuthState {
           AdminAuthBusinessOwnerRegistered>(this, _$identity);
 
   @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    properties
+      ..add(
+          DiagnosticsProperty('type', 'AdminAuthState.businessOwnerRegistered'))
+      ..add(DiagnosticsProperty('request', request));
+  }
+
+  @override
   bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
@@ -257,7 +301,7 @@ class AdminAuthBusinessOwnerRegistered implements AdminAuthState {
   int get hashCode => Object.hash(runtimeType, request);
 
   @override
-  String toString() {
+  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
     return 'AdminAuthState.businessOwnerRegistered(request: $request)';
   }
 }
@@ -310,8 +354,16 @@ class _$AdminAuthBusinessOwnerRegisteredCopyWithImpl<$Res>
 
 /// @nodoc
 
-class AdminAuthUnauthenticated implements AdminAuthState {
+class AdminAuthUnauthenticated
+    with DiagnosticableTreeMixin
+    implements AdminAuthState {
   const AdminAuthUnauthenticated();
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    properties
+      ..add(DiagnosticsProperty('type', 'AdminAuthState.unauthenticated'));
+  }
 
   @override
   bool operator ==(Object other) {
@@ -323,14 +375,14 @@ class AdminAuthUnauthenticated implements AdminAuthState {
   int get hashCode => runtimeType.hashCode;
 
   @override
-  String toString() {
+  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
     return 'AdminAuthState.unauthenticated()';
   }
 }
 
 /// @nodoc
 
-class AdminAuthError implements AdminAuthState {
+class AdminAuthError with DiagnosticableTreeMixin implements AdminAuthState {
   const AdminAuthError(this.message);
 
   final String message;
@@ -341,6 +393,13 @@ class AdminAuthError implements AdminAuthState {
   @pragma('vm:prefer-inline')
   $AdminAuthErrorCopyWith<AdminAuthError> get copyWith =>
       _$AdminAuthErrorCopyWithImpl<AdminAuthError>(this, _$identity);
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    properties
+      ..add(DiagnosticsProperty('type', 'AdminAuthState.error'))
+      ..add(DiagnosticsProperty('message', message));
+  }
 
   @override
   bool operator ==(Object other) {
@@ -354,7 +413,7 @@ class AdminAuthError implements AdminAuthState {
   int get hashCode => Object.hash(runtimeType, message);
 
   @override
-  String toString() {
+  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
     return 'AdminAuthState.error(message: $message)';
   }
 }
@@ -394,8 +453,16 @@ class _$AdminAuthErrorCopyWithImpl<$Res>
 
 /// @nodoc
 
-class AdminAuthPasswordResetSent implements AdminAuthState {
+class AdminAuthPasswordResetSent
+    with DiagnosticableTreeMixin
+    implements AdminAuthState {
   const AdminAuthPasswordResetSent();
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    properties
+      ..add(DiagnosticsProperty('type', 'AdminAuthState.passwordResetSent'));
+  }
 
   @override
   bool operator ==(Object other) {
@@ -408,7 +475,7 @@ class AdminAuthPasswordResetSent implements AdminAuthState {
   int get hashCode => runtimeType.hashCode;
 
   @override
-  String toString() {
+  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
     return 'AdminAuthState.passwordResetSent()';
   }
 }

@@ -13,7 +13,7 @@ dependencies:
 
   # PAQUETE PRINCIPAL - contiene toda la lógica
   core:
-    # path: ../Turbo_Core/core
+    path: ../Turbo_Core/core
 
     git:
       url: git@github.com:Turbo-Team-Org/Turbo_Core.git

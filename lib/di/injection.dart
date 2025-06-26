@@ -110,6 +110,11 @@ void _verifyCoreDependencies(GetIt di) {
 
 /// Registra todos los Cubits del UI
 void _registerUICubits(GetIt di) {
+  // REGISTRO DEL REPOSITORIO DE CATEGORÍAS DE LUGARES
+  di.registerLazySingleton<PlaceCategoryRepositoryInterface>(
+    () => PlaceCategoryService(),
+  );
+
   // Sistema de autenticación unificado - maneja admins y business owners
   di.registerLazySingleton(() {
     final cubit = AdminAuthCubit(di<AdminAuthRepository>());
@@ -124,6 +129,7 @@ void _registerUICubits(GetIt di) {
   di.registerLazySingleton(() => PlaceFormCubit(
         placeRepository: di<PlaceRepository>(),
         categoryRepository: di<CategoryRepository>(),
+        placeCategoryRepository: di<PlaceCategoryRepositoryInterface>(),
       ));
   debugPrint('✅ PlaceFormCubit registrado');
 

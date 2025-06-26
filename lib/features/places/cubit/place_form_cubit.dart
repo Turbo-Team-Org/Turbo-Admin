@@ -6,16 +6,13 @@ import 'package:turbo_admin/core/state_management/base_cubit.dart';
 import 'package:turbo_admin/features/places/cubit/place_form_state.dart';
 import 'package:turbo_admin/features/auth/cubit/admin_auth_cubit.dart';
 import 'package:get_it/get_it.dart';
-// e.g., import 'package:core/models/place.dart';
-// import 'package:core/models/category.dart';
-// import 'package:core/repositories/category_repository.dart';
-// import 'package:core/repositories/place_repository.dart';
-// import 'package:core/services/place_service.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// Cubit for managing place form state and operations
 class PlaceFormCubit extends Cubit<PlaceFormState> with BaseCubit {
   final PlaceRepository _placeRepository;
   final CategoryRepository _categoryRepository;
+  final PlaceCategoryRepositoryInterface _placeCategoryRepository;
   final _placeSavedController = StreamController<void>.broadcast();
 
   Stream<void> get onPlaceSaved => _placeSavedController.stream;
@@ -23,8 +20,10 @@ class PlaceFormCubit extends Cubit<PlaceFormState> with BaseCubit {
   PlaceFormCubit({
     required PlaceRepository placeRepository,
     required CategoryRepository categoryRepository,
+    required PlaceCategoryRepositoryInterface placeCategoryRepository,
   })  : _placeRepository = placeRepository,
         _categoryRepository = categoryRepository,
+        _placeCategoryRepository = placeCategoryRepository,
         super(PlaceFormInitial());
 
   @override
@@ -75,9 +74,11 @@ class PlaceFormCubit extends Cubit<PlaceFormState> with BaseCubit {
         throw Exception('No hay un administrador autenticado');
       }
 
+      String placeId = place.id;
       if (isNewPlace) {
         // Generar un ID temporal para el lugar
         final tempId = DateTime.now().millisecondsSinceEpoch.toString();
+        placeId = tempId;
 
         // Actualizar ownedPlaceIds del admin con el ID temporal
         final updatedOwnedPlaceIds = [...currentAdmin.ownedPlaceIds, tempId];
@@ -96,6 +97,17 @@ class PlaceFormCubit extends Cubit<PlaceFormState> with BaseCubit {
         if (!success) {
           throw Exception('Error al actualizar el lugar');
         }
+      }
+
+      // Insertar en place_categories
+      if (place.categoryId.isNotEmpty && placeId.isNotEmpty) {
+        await _placeCategoryRepository.upsertPlaceCategory(
+          PlaceCategory(
+            placeId: placeId,
+            categoryId: place.categoryId,
+            createdAt: DateTime.now(),
+          ),
+        );
       }
 
       secureEmit(PlaceFormSuccess(isNewPlace: isNewPlace));

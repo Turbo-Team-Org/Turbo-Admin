@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:core/core.dart';
 import 'package:turbo_admin/core/state_management/base_cubit.dart';
+import 'package:flutter/foundation.dart';
 
 part 'admin_auth_cubit.freezed.dart';
 part 'admin_auth_state.dart';
@@ -120,12 +121,30 @@ class AdminAuthCubit extends Cubit<AdminAuthState> with BaseCubit {
 
   /// Cierra sesión
   Future<void> signOut() async {
+    if (kDebugMode) {
+      debugPrint('🔄 AdminAuthCubit: Iniciando signOut...');
+    }
+
     secureEmit(const AdminAuthState.loading());
 
     try {
+      if (kDebugMode) {
+        debugPrint(
+            '🔄 AdminAuthCubit: Llamando a _authRepository.signOut()...');
+      }
+
       await _authRepository.signOut();
+
+      if (kDebugMode) {
+        debugPrint(
+            '✅ AdminAuthCubit: signOut exitoso, emitiendo unauthenticated');
+      }
+
       secureEmit(const AdminAuthState.unauthenticated());
     } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ AdminAuthCubit: Error en signOut: $e');
+      }
       secureEmit(AdminAuthState.error(e.toString()));
     }
   }
@@ -215,10 +234,10 @@ class AdminAuthCubit extends Cubit<AdminAuthState> with BaseCubit {
     // Super admin puede manejar cualquier lugar
     if (isSuperAdmin) return true;
 
-    // Business owner aprobado puede manejar sus lugares
-    // TODO: Implementar lógica cuando el core package tenga la propiedad approvedPlaceIds
-    if (isBusinessOwnerApproved) {
-      return true; // Por ahora permitir acceso a business owners aprobados
+    // Admin normal solo puede manejar sus propios lugares
+    final admin = currentAdminUser;
+    if (admin != null && admin.ownedPlaceIds.contains(placeId)) {
+      return true;
     }
 
     return false;
