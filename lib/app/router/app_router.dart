@@ -4,6 +4,21 @@ import 'package:go_router/go_router.dart';
 import 'package:get_it/get_it.dart';
 import 'package:turbo_admin/features/auth/cubit/admin_auth_cubit.dart';
 import 'package:turbo_admin/core/widgets/admin_scaffold.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:turbo_admin/features/places/cubit/place_form_cubit.dart';
+import 'package:core/core.dart';
+import 'package:turbo_admin/features/categories/pages/categories_page.dart';
+import 'package:turbo_admin/features/categories/pages/category_form_page.dart';
+import 'package:turbo_admin/features/users/pages/users_page.dart';
+import 'package:turbo_admin/features/users/pages/user_management_page.dart';
+import 'package:turbo_admin/features/diagnostics/pages/diagnostics_page.dart';
+import 'package:turbo_admin/features/business_requests/pages/business_requests_page.dart';
+import 'package:turbo_admin/features/auth/pages/login_page.dart';
+import 'package:turbo_admin/features/auth/pages/register_page.dart';
+import 'package:turbo_admin/features/auth/pages/loading_page.dart';
+import 'package:turbo_admin/features/auth/pages/business_owner_registration_page.dart';
+import 'package:turbo_admin/features/dashboard/pages/business_owner_dashboard_page.dart';
+import 'package:turbo_admin/features/reservations/pages/reservation_dashboard_page.dart';
 
 // Dashboard
 import 'package:turbo_admin/features/dashboard/pages/dashboard_page.dart';
@@ -11,6 +26,7 @@ import 'package:turbo_admin/features/dashboard/pages/dashboard_page.dart';
 // Places
 import 'package:turbo_admin/features/places/pages/places_page.dart';
 import 'package:turbo_admin/features/places/pages/place_form_page.dart';
+import 'package:turbo_admin/features/places/cubit/places_cubit.dart';
 
 // Events
 import 'package:turbo_admin/features/events/pages/events_page.dart';
@@ -19,32 +35,6 @@ import 'package:turbo_admin/features/events/pages/event_form_page.dart';
 // Reviews
 import 'package:turbo_admin/features/reviews/pages/reviews_page.dart';
 import 'package:turbo_admin/features/reviews/pages/review_moderation_page.dart';
-
-// Categories
-import 'package:turbo_admin/features/categories/pages/categories_page.dart';
-import 'package:turbo_admin/features/categories/pages/category_form_page.dart';
-
-// Users
-import 'package:turbo_admin/features/users/pages/users_page.dart';
-import 'package:turbo_admin/features/users/pages/user_management_page.dart';
-
-// Diagnostics
-import 'package:turbo_admin/features/diagnostics/pages/diagnostics_page.dart';
-
-// Business Requests
-import 'package:turbo_admin/features/business_requests/pages/business_requests_page.dart';
-
-// Auth
-import 'package:turbo_admin/features/auth/pages/login_page.dart';
-import 'package:turbo_admin/features/auth/pages/register_page.dart';
-import 'package:turbo_admin/features/auth/pages/loading_page.dart';
-import 'package:turbo_admin/features/auth/pages/business_owner_registration_page.dart';
-
-// Business Owner Dashboard
-import 'package:turbo_admin/features/dashboard/pages/business_owner_dashboard_page.dart';
-
-// Reservations
-import 'package:turbo_admin/features/reservations/pages/reservation_dashboard_page.dart';
 
 // Simple global key for the router's navigator state, useful for contextless navigation if needed
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -69,7 +59,7 @@ String? _handleRedirect(BuildContext context, GoRouterState state) {
       debugPrint('   Auth state: ${authState.runtimeType}');
     }
 
-    // Estrategia simplificada:
+    // Estrategia mejorada:
     // 1. Si está autenticado y en página de auth → dashboard apropiado
     if ((authState is AdminAuthenticatedAdmin ||
             authState is AdminAuthenticatedBusinessOwner) &&
@@ -87,7 +77,20 @@ String? _handleRedirect(BuildContext context, GoRouterState state) {
       return '/dashboard'; // fallback
     }
 
-    // 2. Si NO está autenticado y NO está en página de auth → login
+    // 2. Si es estado inicial o de carga, permitir navegación y verificar en background
+    if (authState is AdminAuthInitial || authState is AdminAuthLoading) {
+      if (kDebugMode) {
+        debugPrint(
+            '   ⚡ Initial/Loading state - allowing navigation, checking auth in background');
+      }
+      // Verificar autenticación en background sin bloquear navegación
+      if (authState is AdminAuthInitial) {
+        Future.microtask(() => adminAuthCubit.checkAuthStatus());
+      }
+      return null;
+    }
+
+    // 3. Si NO está autenticado y NO está en página de auth → login
     if ((authState is AdminAuthUnauthenticated ||
             authState is AdminAuthError) &&
         !isOnAuthPage) {
@@ -96,15 +99,6 @@ String? _handleRedirect(BuildContext context, GoRouterState state) {
             '   ❌ Unauthenticated user not on auth page - redirecting to login');
       }
       return '/login';
-    }
-
-    // 3. Si es estado inicial, iniciar verificación pero permitir navegación
-    if (authState is AdminAuthInitial) {
-      if (kDebugMode) {
-        debugPrint(
-            '   ⚡ Initial state - triggering checkAuthStatus, no redirect');
-      }
-      Future.microtask(() => adminAuthCubit.checkAuthStatus());
     }
 
     if (kDebugMode) {
@@ -297,27 +291,50 @@ class AppRouter {
             pageBuilder: (context, state) => _buildPageWithSlideTransition(
               context,
               state,
-              const PlacesListPage(),
+              BlocProvider<PlacesCubit>.value(
+                value: GetIt.instance<PlacesCubit>()..loadPlaces(),
+                child: const PlacesListPage(),
+              ),
             ),
             routes: <RouteBase>[
               GoRoute(
                 path: 'new',
                 name: 'newPlace',
-                pageBuilder: (context, state) => _buildPageWithScaleTransition(
-                  context,
-                  state,
-                  const PlaceFormPage(),
-                ),
+                pageBuilder: (context, state) {
+                  final di = GetIt.instance;
+                  return _buildPageWithScaleTransition(
+                    context,
+                    state,
+                    BlocProvider(
+                      create: (context) => PlaceFormCubit(
+                        placeRepository: di<PlaceRepository>(),
+                        categoryRepository: di<CategoryRepository>(),
+                        placeCategoryRepository:
+                            di<PlaceCategoryRepositoryInterface>(),
+                      ),
+                      child: const PlaceFormPage(),
+                    ),
+                  );
+                },
               ),
               GoRoute(
                 path: ':placeId/edit',
                 name: 'editPlace',
                 pageBuilder: (context, state) {
                   final placeId = state.pathParameters['placeId'];
+                  final di = GetIt.instance;
                   return _buildPageWithScaleTransition(
                     context,
                     state,
-                    PlaceFormPage(placeId: placeId),
+                    BlocProvider(
+                      create: (context) => PlaceFormCubit(
+                        placeRepository: di<PlaceRepository>(),
+                        categoryRepository: di<CategoryRepository>(),
+                        placeCategoryRepository:
+                            di<PlaceCategoryRepositoryInterface>(),
+                      ),
+                      child: PlaceFormPage(placeId: placeId),
+                    ),
                   );
                 },
               ),

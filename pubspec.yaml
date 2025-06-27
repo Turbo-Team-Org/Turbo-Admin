@@ -16,7 +16,7 @@ dependencies:
   core:
     git:
       url: git@github.com:Turbo-Team-Org/Turbo_Core.git
-      ref: 60766ba3b498e60a58da678df631dc9883d7b035
+      ref: 4fa60dc31932bf759072e90a80788ebde8faa10a
       path: core
 
   # Solo para UI y estado
@@ -42,6 +42,7 @@ dependencies:
   cloud_firestore: ^5.5.0
   firebase_storage: ^12.3.6
   firebase_analytics: ^11.3.6
+  dartz: ^0.10.1
 
 dev_dependencies:
   flutter_test:
