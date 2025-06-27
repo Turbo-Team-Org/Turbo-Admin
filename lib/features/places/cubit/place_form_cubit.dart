@@ -32,16 +32,26 @@ class PlaceFormCubit extends Cubit<PlaceFormState> with BaseCubit {
     return super.close();
   }
 
+  /// Limpia el estado del cubit para prepararlo para una nueva carga
+  void clearState() {
+    debugPrint('🔄 PlaceFormCubit: Limpiando estado anterior');
+    secureEmit(PlaceFormInitial());
+  }
+
   Future<void> loadFormData({String? placeId}) async {
     debugPrint('🔄 PlaceFormCubit: Iniciando carga de datos...');
     debugPrint('📍 PlaceFormCubit: placeId = $placeId');
+
+    // Limpiar estado anterior antes de cargar nuevos datos
+    secureEmit(PlaceFormInitial());
     secureEmit(PlaceFormLoading());
+
     try {
       debugPrint('🔄 PlaceFormCubit: Cargando categorías...');
       final categories = await _categoryRepository.getAllCategories();
       debugPrint('✅ PlaceFormCubit: Categorías cargadas: ${categories.length}');
 
-      if (placeId != null) {
+      if (placeId != null && placeId.isNotEmpty) {
         debugPrint('🔄 PlaceFormCubit: Cargando lugar con ID: $placeId');
         final place = await _placeRepository.getPlaceById(placeId);
         debugPrint('✅ PlaceFormCubit: Lugar cargado: ${place.name}');
@@ -59,7 +69,15 @@ class PlaceFormCubit extends Cubit<PlaceFormState> with BaseCubit {
     } catch (e, stackTrace) {
       debugPrint('❌ PlaceFormCubit: Error al cargar datos: $e');
       debugPrint('📍 StackTrace: $stackTrace');
-      secureEmit(PlaceFormError(e.toString()));
+
+      // Verificar si el error es específico del lugar
+      if (placeId != null && placeId.isNotEmpty) {
+        secureEmit(PlaceFormError(
+            'No se pudo cargar el lugar con ID: $placeId. Error: ${e.toString()}'));
+      } else {
+        secureEmit(PlaceFormError(
+            'Error al cargar los datos del formulario: ${e.toString()}'));
+      }
     }
   }
 

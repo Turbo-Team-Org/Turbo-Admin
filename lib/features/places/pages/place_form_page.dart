@@ -34,6 +34,9 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
   // List<String> _imageUrls = [];
   // bool _isOpen = true; // Example for a schedule field
 
+  // Add this flag to the state class
+  bool _didLoadData = false;
+
   @override
   void initState() {
     super.initState();
@@ -44,6 +47,17 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
     // _latitudeController = TextEditingController();
     // _longitudeController = TextEditingController();
     // _phoneController = TextEditingController();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    debugPrint(
+        '🔄 PlaceFormPage: didChangeDependencies - placeId: ${widget.placeId}');
+    if (!_didLoadData) {
+      _didLoadData = true;
+      context.read<PlaceFormCubit>().loadFormData(placeId: widget.placeId);
+    }
   }
 
   @override
@@ -85,58 +99,74 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => GetIt.instance<PlaceFormCubit>()
-        ..loadFormData(placeId: widget.placeId),
-      child: AdminPage(
-        //  title: widget.placeId == null ? 'Crear Lugar' : 'Editar Lugar',
-        body: BlocConsumer<PlaceFormCubit, PlaceFormState>(
-          listener: (context, state) {
-            if (state is PlaceFormSuccess) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                    content: Text('Lugar guardado exitosamente'),
-                    backgroundColor: Colors.green),
-              );
-              // Navigate back to places list or details page
-              if (context.canPop()) {
-                context.pop();
-              } else {
-                context.go('/places'); // Fallback route
-              }
-            } else if (state is PlaceFormError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                    content: Text('Error: ${state.message}'),
-                    backgroundColor: Colors.red),
-              );
-            } else if (state is PlaceFormLoaded) {
-              if (widget.placeId == null && state.place == null) {
-                // Creating new
-                _clearControllers(); // Clear fields for new entry
-              } else {
-                // Editing existing or loaded existing
-                _initializeControllers(state.place);
-                // Ensure _selectedCategory is set if editing and categories are loaded
-                if (state.place?.categoryId != null &&
-                    state.categories.isNotEmpty) {
-                  try {
-                    _selectedCategory = state.categories
-                        .firstWhere((cat) => cat.id == state.place!.categoryId);
-                  } catch (e) {
-                    // Category might not be in the list, handle appropriately
-                    _selectedCategory = null;
-                  }
+    return AdminPage(
+      //  title: widget.placeId == null ? 'Crear Lugar' : 'Editar Lugar',
+      body: BlocListener<PlaceFormCubit, PlaceFormState>(
+        listener: (context, state) {
+          debugPrint(
+              '🔄 PlaceFormPage: Estado cambiado a: ${state.runtimeType}');
+
+          if (state is PlaceFormSuccess) {
+            debugPrint(
+                '✅ PlaceFormPage: Lugar guardado exitosamente, navegando de vuelta');
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                  content: Text('Lugar guardado exitosamente'),
+                  backgroundColor: Colors.green),
+            );
+
+            // Limpiar el estado del cubit antes de navegar
+            final cubit = context.read<PlaceFormCubit>();
+            cubit.clearState();
+
+            // Navigate back to places list or details page
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/places'); // Fallback route
+            }
+          } else if (state is PlaceFormError) {
+            debugPrint('❌ PlaceFormPage: Error en estado: ${state.message}');
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                  content: Text('Error: ${state.message}'),
+                  backgroundColor: Colors.red),
+            );
+          } else if (state is PlaceFormLoaded) {
+            debugPrint(
+                '✅ PlaceFormPage: Datos cargados - Lugar: ${state.place?.name ?? 'Nuevo'}, Categorías: ${state.categories.length}');
+            if (widget.placeId == null && state.place == null) {
+              // Creating new
+              _clearControllers(); // Clear fields for new entry
+            } else {
+              // Editing existing or loaded existing
+              _initializeControllers(state.place);
+              // Ensure _selectedCategory is set if editing and categories are loaded
+              if (state.place?.categoryId != null &&
+                  state.categories.isNotEmpty) {
+                try {
+                  _selectedCategory = state.categories
+                      .firstWhere((cat) => cat.id == state.place!.categoryId);
+                } catch (e) {
+                  // Category might not be in the list, handle appropriately
+                  _selectedCategory = null;
                 }
               }
             }
-          },
+          }
+        },
+        child: BlocBuilder<PlaceFormCubit, PlaceFormState>(
           builder: (context, state) {
+            debugPrint(
+                '🔄 PlaceFormPage: Builder llamado con estado: ${state.runtimeType}');
+
             if (state is PlaceFormLoading || state is PlaceFormInitial) {
               return const Center(child: CircularProgressIndicator());
             }
 
             if (state is PlaceFormLoaded) {
+              debugPrint(
+                  '✅ PlaceFormPage: Renderizando formulario con datos cargados');
               return SingleChildScrollView(
                 padding: const EdgeInsets.all(24.0),
                 child: Form(
@@ -174,6 +204,76 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
               ));
             }
 
+            if (state is PlaceFormSuccess) {
+              debugPrint('✅ PlaceFormPage: Renderizando estado de éxito');
+              return const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.check_circle,
+                      size: 64,
+                      color: Colors.green,
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      'Lugar guardado exitosamente',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Redirigiendo...',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            if (state is PlaceFormError) {
+              debugPrint(
+                  '❌ PlaceFormPage: Renderizando estado de error: ${state.message}');
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: Colors.red[400],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Error al cargar el formulario',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      state.message,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        final cubit = context.read<PlaceFormCubit>();
+                        cubit.clearState();
+                        cubit.loadFormData(placeId: widget.placeId);
+                      },
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Reintentar'),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            debugPrint(
+                '⚠️ PlaceFormPage: Estado no manejado: ${state.runtimeType}');
             return const Center(
                 child: Text('Algo salió mal. Por favor, intenta de nuevo.'));
           },
