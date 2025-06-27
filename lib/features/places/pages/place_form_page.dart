@@ -121,7 +121,7 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
 
             // Navigate back to places list or details page
             if (context.canPop()) {
-              context.pop();
+              context.pop(true); // Indica que SÍ hubo cambios
             } else {
               context.go('/places'); // Fallback route
             }
@@ -174,6 +174,34 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
+                      // Nueva fila de encabezado con flecha y título
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.arrow_back),
+                            tooltip: 'Atrás',
+                            onPressed: () {
+                              if (context.canPop()) {
+                                context
+                                    .pop(false); // Indica que NO hubo cambios
+                              } else {
+                                context.go('/places');
+                              }
+                            },
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            widget.placeId == null
+                                ? 'Crear Lugar'
+                                : 'Editar Lugar',
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineSmall
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
                       _buildBasicInfoSection(context, state.place),
                       const SizedBox(height: 24),
                       _buildCategorySection(

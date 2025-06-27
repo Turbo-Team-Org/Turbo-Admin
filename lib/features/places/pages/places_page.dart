@@ -39,7 +39,7 @@ class _PlacesListPageState extends State<PlacesListPage> {
           } else if (state is PlacesLoaded) {
             return PlacesDataTable(
               places: state.places,
-              onEdit: (placeId) {
+              onEdit: (placeId) async {
                 debugPrint(
                     '🔄 PlacesListPage: Editando lugar con ID: $placeId');
 
@@ -51,9 +51,12 @@ class _PlacesListPageState extends State<PlacesListPage> {
                     authState is AdminAuthenticatedBusinessOwner) {
                   debugPrint(
                       '✅ PlacesListPage: Usuario autenticado, navegando a editar lugar');
-                  // Usar pushReplacement para evitar navegaciones duplicadas
-                  context.pushReplacementNamed('editPlace',
+                  // Usar push y esperar resultado
+                  final result = await context.pushNamed('editPlace',
                       pathParameters: {'placeId': placeId});
+                  if (result == true && context.mounted) {
+                    context.read<PlacesCubit>().loadPlaces();
+                  }
                 } else {
                   // Si no está autenticado, mostrar mensaje y redirigir al login
                   debugPrint(
@@ -136,8 +139,11 @@ class _PlacesListPageState extends State<PlacesListPage> {
             isDark ? const Color(0xFFFF5757) : const Color(0xFFE53E3E),
         icon: const Icon(Icons.add),
         label: const Text('Crear Lugar'),
-        onPressed: () {
-          context.goNamed('newPlace');
+        onPressed: () async {
+          final result = await context.pushNamed('newPlace');
+          if (result == true && context.mounted) {
+            context.read<PlacesCubit>().loadPlaces();
+          }
         },
       ),
     );
