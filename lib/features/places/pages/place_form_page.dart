@@ -7,6 +7,10 @@ import 'package:turbo_admin/core/widgets/admin_page.dart';
 import 'package:turbo_admin/features/places/cubit/place_form_cubit.dart';
 import 'package:turbo_admin/features/places/cubit/place_form_state.dart';
 import 'package:turbo_admin/features/auth/cubit/admin_auth_cubit.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:html' as html show File, FileReader, DragEvent, window;
+import 'dart:typed_data';
 
 class PlaceFormPage extends StatefulWidget {
   final String? placeId;
@@ -23,19 +27,33 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
   late TextEditingController _nameController;
   late TextEditingController _descriptionController;
   late TextEditingController _addressController;
-  // Add controllers for other Place fields as needed (e.g., latitude, longitude, phone, website)
-  // For example:
-  // late TextEditingController _latitudeController;
-  // late TextEditingController _longitudeController;
-  // late TextEditingController _phoneController;
+  late TextEditingController _phoneController;
+  late TextEditingController _websiteController;
+  late TextEditingController _menuUrlController;
+  late TextEditingController _averagePriceController;
+  late TextEditingController _latitudeController;
+  late TextEditingController _longitudeController;
+  late TextEditingController _tagsController;
+  late TextEditingController _mainImageController;
 
   Category? _selectedCategory;
-  // Placeholder for other fields like images, schedule, etc.
-  // List<String> _imageUrls = [];
-  // bool _isOpen = true; // Example for a schedule field
+  int _selectedPriceLevel = 0;
+  bool _isOpen = true;
+
+  // Horarios de apertura
+  Map<String, Map<String, String>> _openingHours = {};
+
+  // Etiquetas
+  List<String> _tags = [];
 
   // Add this flag to the state class
   bool _didLoadData = false;
+
+  List<String> _imageUrls = [];
+
+  bool _isUploadingImage = false;
+
+  static const int maxImageSizeBytes = 3 * 1024 * 1024; // 3MB
 
   @override
   void initState() {
@@ -43,10 +61,36 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
     _nameController = TextEditingController();
     _descriptionController = TextEditingController();
     _addressController = TextEditingController();
-    // Initialize other controllers
-    // _latitudeController = TextEditingController();
-    // _longitudeController = TextEditingController();
-    // _phoneController = TextEditingController();
+    _phoneController = TextEditingController();
+    _websiteController = TextEditingController();
+    _menuUrlController = TextEditingController();
+    _averagePriceController = TextEditingController();
+    _latitudeController = TextEditingController();
+    _longitudeController = TextEditingController();
+    _tagsController = TextEditingController();
+    _mainImageController = TextEditingController();
+
+    // Inicializar horarios por defecto
+    _initializeDefaultOpeningHours();
+  }
+
+  void _initializeDefaultOpeningHours() {
+    final days = [
+      'monday',
+      'tuesday',
+      'wednesday',
+      'thursday',
+      'friday',
+      'saturday',
+      'sunday'
+    ];
+    for (final day in days) {
+      _openingHours[day] = {
+        'open': '09:00',
+        'close': '18:00',
+        'isOpen': 'true',
+      };
+    }
   }
 
   @override
@@ -57,6 +101,57 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
     if (!_didLoadData) {
       _didLoadData = true;
       context.read<PlaceFormCubit>().loadFormData(placeId: widget.placeId);
+      // Drag & drop para web
+      // Solo registrar una vez
+      // ignore: undefined_prefixed_name
+      if (identical(0, 0.0)) {
+        html.window.onDrop.listen((event) async {
+          event.preventDefault();
+          if (event.dataTransfer != null &&
+              event.dataTransfer!.files != null &&
+              event.dataTransfer!.files!.isNotEmpty) {
+            final file = event.dataTransfer!.files![0];
+            if (file.type.startsWith('image/')) {
+              final reader = html.FileReader();
+              reader.readAsArrayBuffer(file);
+              await reader.onLoad.first;
+              final bytes = reader.result as Uint8List;
+              // Llama a onAccept del DragTarget manualmente
+              if (mounted) {
+                setState(() {
+                  _isUploadingImage = true;
+                });
+                final fileName =
+                    'places/${DateTime.now().millisecondsSinceEpoch}_${file.name}';
+                try {
+                  final ref = FirebaseStorage.instance.ref().child(fileName);
+                  final uploadTask = await ref.putData(bytes);
+                  final url = await uploadTask.ref.getDownloadURL();
+                  setState(() {
+                    _imageUrls.add(url);
+                    if (_mainImageController.text.isEmpty) {
+                      _mainImageController.text = url;
+                    }
+                  });
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error al subir imagen: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+                setState(() {
+                  _isUploadingImage = false;
+                });
+              }
+            }
+          }
+        });
+        html.window.onDragOver.listen((event) {
+          event.preventDefault();
+        });
+      }
     }
   }
 
@@ -65,10 +160,14 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
     _nameController.dispose();
     _descriptionController.dispose();
     _addressController.dispose();
-    // Dispose other controllers
-    // _latitudeController.dispose();
-    // _longitudeController.dispose();
-    // _phoneController.dispose();
+    _phoneController.dispose();
+    _websiteController.dispose();
+    _menuUrlController.dispose();
+    _averagePriceController.dispose();
+    _latitudeController.dispose();
+    _longitudeController.dispose();
+    _tagsController.dispose();
+    _mainImageController.dispose();
     super.dispose();
   }
 
@@ -77,12 +176,24 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
       _nameController.text = place.name;
       _descriptionController.text = place.description;
       _addressController.text = place.address;
-      // _latitudeController.text = place.latitude?.toString() ?? '';
-      // _longitudeController.text = place.longitude?.toString() ?? '';
-      // _phoneController.text = place.phone ?? '';
-      // _selectedCategory = place.category; // Assuming Place has a Category object
-      // _imageUrls = List<String>.from(place.imageUrls ?? []);
-      // _isOpen = place.isOpen; // Assuming this field exists
+      _phoneController.text = place.phone;
+      _websiteController.text = place.website;
+      _menuUrlController.text = place.menuUrl;
+      _averagePriceController.text = place.averagePrice.toString();
+      _latitudeController.text = place.latitude.toString();
+      _longitudeController.text = place.longitude.toString();
+      _selectedPriceLevel = place.priceLevel;
+      _isOpen = place.isOpen;
+      _tags = List<String>.from(place.tags);
+      _tagsController.text = _tags.join(', ');
+      _imageUrls = List<String>.from(place.imageUrls);
+      _mainImageController.text = place.mainImage;
+
+      // Cargar horarios si existen
+      if (place.openingHours.isNotEmpty) {
+        _openingHours =
+            Map<String, Map<String, String>>.from(place.openingHours);
+      }
     }
   }
 
@@ -90,11 +201,20 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
     _nameController.clear();
     _descriptionController.clear();
     _addressController.clear();
-    // _latitudeController.clear();
-    // _longitudeController.clear();
-    // _phoneController.clear();
+    _phoneController.clear();
+    _websiteController.clear();
+    _menuUrlController.clear();
+    _averagePriceController.clear();
+    _latitudeController.clear();
+    _longitudeController.clear();
+    _tagsController.clear();
+    _mainImageController.clear();
     _selectedCategory = null;
-    // _imageUrls = [];
+    _selectedPriceLevel = 0;
+    _isOpen = true;
+    _tags = [];
+    _imageUrls = [];
+    _initializeDefaultOpeningHours();
   }
 
   @override
@@ -207,12 +327,20 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
                       _buildCategorySection(
                           context, state.categories, state.place),
                       const SizedBox(height: 24),
-                      // _buildLocationSection(context, state.place),
-                      // const SizedBox(height: 24),
-                      // _buildImagesSection(context, state.place),
-                      // const SizedBox(height: 24),
-                      // _buildScheduleSection(context, state.place),
-                      // const SizedBox(height: 32),
+                      _buildContactSection(context, state.place),
+                      const SizedBox(height: 24),
+                      _buildLocationSection(context, state.place),
+                      const SizedBox(height: 24),
+                      _buildPricingSection(context, state.place),
+                      const SizedBox(height: 24),
+                      _buildTagsSection(context, state.place),
+                      const SizedBox(height: 24),
+                      _buildImagesSection(context, state.place),
+                      const SizedBox(height: 24),
+                      _buildOpeningHoursSection(context, state.place),
+                      const SizedBox(height: 24),
+                      _buildStatusSection(context, state.place),
+                      const SizedBox(height: 32),
                       _buildSaveButton(context, state.place),
                     ],
                   ),
@@ -352,7 +480,6 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
             return null;
           },
         ),
-        // Add more fields like phone, website etc.
       ],
     );
   }
@@ -402,8 +529,581 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
     );
   }
 
-  // Placeholder for other sections like _buildLocationSection, _buildImagesSection, _buildScheduleSection
-  // These would contain TextFormFields for latitude/longitude, image pickers, and schedule inputs
+  Widget _buildContactSection(BuildContext context, Place? currentPlace) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        _buildSectionTitle('Información de Contacto'),
+        TextFormField(
+          controller: _phoneController,
+          decoration: const InputDecoration(
+              labelText: 'Teléfono', border: OutlineInputBorder()),
+          keyboardType: TextInputType.phone,
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _websiteController,
+          decoration: const InputDecoration(
+              labelText: 'Sitio Web', border: OutlineInputBorder()),
+          keyboardType: TextInputType.url,
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _menuUrlController,
+          decoration: const InputDecoration(
+              labelText: 'URL del Menú', border: OutlineInputBorder()),
+          keyboardType: TextInputType.url,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLocationSection(BuildContext context, Place? currentPlace) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        _buildSectionTitle('Ubicación'),
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: _latitudeController,
+                decoration: const InputDecoration(
+                    labelText: 'Latitud', border: OutlineInputBorder()),
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                validator: (value) {
+                  if (value != null && value.isNotEmpty) {
+                    final lat = double.tryParse(value);
+                    if (lat == null || lat < -90 || lat > 90) {
+                      return 'Latitud debe estar entre -90 y 90';
+                    }
+                  }
+                  return null;
+                },
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: TextFormField(
+                controller: _longitudeController,
+                decoration: const InputDecoration(
+                    labelText: 'Longitud', border: OutlineInputBorder()),
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                validator: (value) {
+                  if (value != null && value.isNotEmpty) {
+                    final lng = double.tryParse(value);
+                    if (lng == null || lng < -180 || lng > 180) {
+                      return 'Longitud debe estar entre -180 y 180';
+                    }
+                  }
+                  return null;
+                },
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPricingSection(BuildContext context, Place? currentPlace) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        _buildSectionTitle('Precios'),
+        TextFormField(
+          controller: _averagePriceController,
+          decoration: const InputDecoration(
+              labelText: 'Precio Promedio (\$)', border: OutlineInputBorder()),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          validator: (value) {
+            if (value != null && value.isNotEmpty) {
+              final price = double.tryParse(value);
+              if (price == null || price < 0) {
+                return 'El precio debe ser un número positivo';
+              }
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+        DropdownButtonFormField<int>(
+          value: _selectedPriceLevel,
+          decoration: const InputDecoration(
+              labelText: 'Nivel de Precio', border: OutlineInputBorder()),
+          items: [
+            DropdownMenuItem(value: 0, child: Text('Gratis')),
+            DropdownMenuItem(value: 1, child: Text('\$ - Económico')),
+            DropdownMenuItem(value: 2, child: Text('\$\$ - Moderado')),
+            DropdownMenuItem(value: 3, child: Text('\$\$\$ - Costoso')),
+            DropdownMenuItem(value: 4, child: Text('\$\$\$\$ - Muy Costoso')),
+          ],
+          onChanged: (int? newValue) {
+            setState(() {
+              _selectedPriceLevel = newValue ?? 0;
+            });
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTagsSection(BuildContext context, Place? currentPlace) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        _buildSectionTitle('Etiquetas'),
+        TextFormField(
+          controller: _tagsController,
+          decoration: const InputDecoration(
+              labelText: 'Etiquetas (separadas por comas)',
+              border: OutlineInputBorder(),
+              hintText: 'Ej: wifi, parking, terraza, música en vivo'),
+          maxLines: 2,
+          onChanged: (value) {
+            setState(() {
+              _tags = value
+                  .split(',')
+                  .map((tag) => tag.trim())
+                  .where((tag) => tag.isNotEmpty)
+                  .toList();
+            });
+          },
+        ),
+        if (_tags.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            children: _tags
+                .map((tag) => Chip(
+                      label: Text(tag),
+                      onDeleted: () {
+                        setState(() {
+                          _tags.remove(tag);
+                          _tagsController.text = _tags.join(', ');
+                        });
+                      },
+                    ))
+                .toList(),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildImagesSection(BuildContext context, Place? currentPlace) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        _buildSectionTitle('Imágenes del Lugar'),
+        // Drag & Drop area
+        _buildDragDropArea(context),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: _mainImageController,
+          decoration: const InputDecoration(
+              labelText: 'URL de la Imagen Principal',
+              border: OutlineInputBorder(),
+              hintText: 'https://...'),
+          onChanged: (value) {
+            setState(() {}); // Para refrescar la preview
+          },
+        ),
+        const SizedBox(height: 8),
+        if (_mainImageController.text.isNotEmpty)
+          Center(
+            child: Image.network(
+              _mainImageController.text,
+              height: 120,
+              errorBuilder: (context, error, stackTrace) =>
+                  const Icon(Icons.broken_image, size: 60),
+            ),
+          ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                decoration: const InputDecoration(
+                    labelText: 'Agregar URL de Imagen a la Galería',
+                    border: OutlineInputBorder(),
+                    hintText: 'https://...'),
+                onFieldSubmitted: (value) {
+                  if (value.isNotEmpty && !_imageUrls.contains(value)) {
+                    setState(() {
+                      _imageUrls.add(value);
+                    });
+                  }
+                },
+              ),
+            ),
+            const SizedBox(width: 8),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.upload_file),
+              label: const Text('Subir imagen'),
+              onPressed: _isUploadingImage
+                  ? null
+                  : () async {
+                      setState(() {
+                        _isUploadingImage = true;
+                      });
+                      try {
+                        final result = await FilePicker.platform.pickFiles(
+                          type: FileType.image,
+                          allowMultiple: false,
+                          withData: true,
+                        );
+                        if (result != null &&
+                            result.files.single.bytes != null) {
+                          final file = result.files.single;
+                          if (file.bytes!.length > maxImageSizeBytes) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                    'La imagen excede el tamaño máximo de 3MB.'),
+                                backgroundColor: Colors.orange,
+                              ),
+                            );
+                            setState(() {
+                              _isUploadingImage = false;
+                            });
+                            return;
+                          }
+                          final fileName =
+                              'places/${DateTime.now().millisecondsSinceEpoch}_${file.name}';
+                          try {
+                            final ref =
+                                FirebaseStorage.instance.ref().child(fileName);
+                            final uploadTask = await ref.putData(file.bytes!);
+                            final url = await uploadTask.ref.getDownloadURL();
+                            setState(() {
+                              _imageUrls.add(url);
+                              // Si no hay imagen principal, la ponemos
+                              if (_mainImageController.text.isEmpty) {
+                                _mainImageController.text = url;
+                              }
+                            });
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Error al subir imagen: $e'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        }
+                      } catch (e) {
+                        // Error inesperado
+                        debugPrint('Error inesperado en picker: $e');
+                      } finally {
+                        setState(() {
+                          _isUploadingImage = false;
+                        });
+                      }
+                    },
+            ),
+            if (_isUploadingImage) ...[
+              const SizedBox(width: 8),
+              const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ]
+          ],
+        ),
+        const SizedBox(height: 8),
+        if (_imageUrls.isNotEmpty)
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _imageUrls
+                .map((url) => Stack(
+                      alignment: Alignment.topRight,
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _mainImageController.text = url;
+                            });
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: _mainImageController.text == url
+                                    ? Colors.green
+                                    : Colors.grey,
+                                width: 2,
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Image.network(
+                              url,
+                              width: 80,
+                              height: 80,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Icon(Icons.broken_image, size: 40),
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close,
+                              color: Colors.red, size: 18),
+                          onPressed: () async {
+                            final urlToDelete = url;
+                            setState(() {
+                              _imageUrls.remove(urlToDelete);
+                              if (_mainImageController.text == urlToDelete) {
+                                _mainImageController.clear();
+                              }
+                            });
+                            // Solo intentamos borrar si es de nuestro bucket
+                            if (urlToDelete
+                                .contains('firebasestorage.googleapis.com')) {
+                              try {
+                                await _deleteImageFromStorage(urlToDelete);
+                              } catch (e) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                        'No se pudo eliminar la imagen del storage: $e'),
+                                    backgroundColor: Colors.orange,
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                        ),
+                      ],
+                    ))
+                .toList(),
+          ),
+        if (_imageUrls.isEmpty) const Text('No hay imágenes en la galería.'),
+        const SizedBox(height: 8),
+        const Text(
+            'Haz click en una imagen para seleccionarla como principal.'),
+      ],
+    );
+  }
+
+  Widget _buildDragDropArea(BuildContext context) {
+    // Solo funciona en web
+    return Listener(
+      onPointerDown: (_) {},
+      child: DragTarget<Uint8List>(
+        onWillAccept: (data) => true,
+        onAccept: (bytes) async {
+          if (bytes.length > maxImageSizeBytes) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('La imagen excede el tamaño máximo de 3MB.'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+            return;
+          }
+          setState(() {
+            _isUploadingImage = true;
+          });
+          final fileName =
+              'places/${DateTime.now().millisecondsSinceEpoch}_dropped_image.jpg';
+          try {
+            final ref = FirebaseStorage.instance.ref().child(fileName);
+            final uploadTask = await ref.putData(bytes);
+            final url = await uploadTask.ref.getDownloadURL();
+            setState(() {
+              _imageUrls.add(url);
+              if (_mainImageController.text.isEmpty) {
+                _mainImageController.text = url;
+              }
+            });
+          } catch (e) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error al subir imagen: $e'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          setState(() {
+            _isUploadingImage = false;
+          });
+        },
+        builder: (context, candidateData, rejectedData) {
+          return GestureDetector(
+            onTap: () {},
+            child: Container(
+              height: 80,
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                border: Border.all(
+                  color: _isUploadingImage ? Colors.green : Colors.grey,
+                  width: 2,
+                ),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              alignment: Alignment.center,
+              child: _isUploadingImage
+                  ? const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                        SizedBox(width: 12),
+                        Text('Subiendo imagen...'),
+                      ],
+                    )
+                  : const Text(
+                      'Arrastra y suelta imágenes aquí para subirlas',
+                      style: TextStyle(color: Colors.black54),
+                    ),
+            ),
+          );
+        },
+        onLeave: (data) {},
+      ),
+    );
+  }
+
+  Future<void> _deleteImageFromStorage(String url) async {
+    try {
+      final storage = FirebaseStorage.instance;
+      final ref = storage.refFromURL(url);
+      await ref.delete();
+    } catch (e) {
+      // Puede fallar si la URL no es de nuestro bucket o ya fue borrada
+      debugPrint('No se pudo eliminar la imagen de storage: $e');
+    }
+  }
+
+  Widget _buildOpeningHoursSection(BuildContext context, Place? currentPlace) {
+    final days = [
+      {'key': 'monday', 'label': 'Lunes'},
+      {'key': 'tuesday', 'label': 'Martes'},
+      {'key': 'wednesday', 'label': 'Miércoles'},
+      {'key': 'thursday', 'label': 'Jueves'},
+      {'key': 'friday', 'label': 'Viernes'},
+      {'key': 'saturday', 'label': 'Sábado'},
+      {'key': 'sunday', 'label': 'Domingo'},
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        _buildSectionTitle('Horarios de Apertura'),
+        ...days.map((day) => _buildDaySchedule(day['key']!, day['label']!)),
+      ],
+    );
+  }
+
+  Widget _buildDaySchedule(String dayKey, String dayLabel) {
+    final dayHours = _openingHours[dayKey] ??
+        {
+          'open': '09:00',
+          'close': '18:00',
+          'isOpen': 'true',
+        };
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    dayLabel,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                Switch(
+                  value: dayHours['isOpen'] == 'true',
+                  onChanged: (value) {
+                    setState(() {
+                      _openingHours[dayKey] = {
+                        ...dayHours,
+                        'isOpen': value.toString(),
+                      };
+                    });
+                  },
+                ),
+              ],
+            ),
+            if (dayHours['isOpen'] == 'true') ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      initialValue: dayHours['open'],
+                      decoration: const InputDecoration(
+                        labelText: 'Apertura',
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          _openingHours[dayKey] = {
+                            ...dayHours,
+                            'open': value,
+                          };
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: TextFormField(
+                      initialValue: dayHours['close'],
+                      decoration: const InputDecoration(
+                        labelText: 'Cierre',
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          _openingHours[dayKey] = {
+                            ...dayHours,
+                            'close': value,
+                          };
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusSection(BuildContext context, Place? currentPlace) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        _buildSectionTitle('Estado'),
+        SwitchListTile(
+          title: const Text('Lugar Abierto'),
+          subtitle: const Text('Indica si el lugar está actualmente abierto'),
+          value: _isOpen,
+          onChanged: (bool value) {
+            setState(() {
+              _isOpen = value;
+            });
+          },
+        ),
+      ],
+    );
+  }
 
   Widget _buildSaveButton(BuildContext context, Place? currentPlace) {
     return ElevatedButton.icon(
@@ -429,6 +1129,12 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
             return;
           }
 
+          // Validar campos numéricos
+          final averagePrice =
+              double.tryParse(_averagePriceController.text) ?? 0.0;
+          final latitude = double.tryParse(_latitudeController.text) ?? 0.0;
+          final longitude = double.tryParse(_longitudeController.text) ?? 0.0;
+
           // Construct the Place object from form values
           final placeToSave = Place(
             id: widget.placeId ?? currentPlace?.id ?? '',
@@ -437,27 +1143,31 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
             address: _addressController.text,
             categoryId: _selectedCategory!.id,
             categoryName: _selectedCategory!.name,
-            mainImage: currentPlace?.mainImage ?? '',
-            imageUrls: currentPlace?.imageUrls ?? [],
-            latitude: currentPlace?.latitude ?? 0.0,
-            longitude: currentPlace?.longitude ?? 0.0,
+            mainImage: _mainImageController.text,
+            imageUrls: _imageUrls,
+            latitude: latitude,
+            longitude: longitude,
             rating: currentPlace?.rating ?? 0.0,
-            isOpen: currentPlace?.isOpen ?? true,
-            phone: currentPlace?.phone ?? '',
-            website: currentPlace?.website ?? '',
+            isOpen: _isOpen,
+            phone: _phoneController.text,
+            website: _websiteController.text,
+            menuUrl: _menuUrlController.text,
+            averagePrice: averagePrice,
+            priceLevel: _selectedPriceLevel,
+            tags: _tags,
+            openingHours: _openingHours,
             metadata: {
               ...currentPlace?.metadata ?? {},
               'ownerId': currentAdmin.uid, // Agregar ownerId en metadata
             },
-            averagePrice: currentPlace?.averagePrice ?? 0.0,
             reviews: currentPlace?.reviews ?? [],
-            menuUrl: currentPlace?.menuUrl ?? '',
             schedules: currentPlace?.schedules ?? [],
             offers: currentPlace?.offers ?? [],
-            tags: currentPlace?.tags ?? [],
             categoryIcon: currentPlace?.categoryIcon ?? '',
-            openingHours: currentPlace?.openingHours ?? {},
-            priceLevel: 0,
+            ownerIds: currentPlace?.ownerIds ?? [],
+            createdBy: currentPlace?.createdBy ?? currentAdmin.uid,
+            createdAt: currentPlace?.createdAt,
+            lastUpdated: DateTime.now(),
           );
 
           context.read<PlaceFormCubit>().savePlace(placeToSave);
