@@ -1,5 +1,6 @@
 {
   "configurations": [
+    
     {
       "name": "TURBO Admin WEB - PRE",
       "type": "dart",
@@ -10,6 +11,7 @@
         "lib/main.dart", 
         "-d", 
         "chrome",
+        "--web-port=5000",
         "--dart-define-from-file=app_config/pre.json"
       ]
     }

@@ -7,10 +7,14 @@ import 'package:turbo_admin/core/widgets/admin_page.dart';
 import 'package:turbo_admin/features/places/cubit/place_form_cubit.dart';
 import 'package:turbo_admin/features/places/cubit/place_form_state.dart';
 import 'package:turbo_admin/features/auth/cubit/admin_auth_cubit.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'dart:html' as html show File, FileReader, DragEvent, window;
-import 'dart:typed_data';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'dart:async';
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
+import 'dart:js' as js;
+import 'dart:ui' as ui;
 
 class PlaceFormPage extends StatefulWidget {
   final String? placeId;
@@ -30,7 +34,6 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
   late TextEditingController _phoneController;
   late TextEditingController _websiteController;
   late TextEditingController _menuUrlController;
-  late TextEditingController _averagePriceController;
   late TextEditingController _latitudeController;
   late TextEditingController _longitudeController;
   late TextEditingController _tagsController;
@@ -49,11 +52,20 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
   // Add this flag to the state class
   bool _didLoadData = false;
 
-  List<String> _imageUrls = [];
+  // Hasta 3 URLs de imágenes adicionales
+  List<TextEditingController> _imageUrlControllers =
+      List.generate(3, (_) => TextEditingController());
 
-  bool _isUploadingImage = false;
+  late GoogleMapController? _mapController;
+  LatLng? _selectedLatLng;
 
-  static const int maxImageSizeBytes = 3 * 1024 * 1024; // 3MB
+  final String _googleMapsApiKey = 'AIzaSyAVutR13I58yvzsHjV5ZLtS9pHfe4cLsJ8';
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+  List<dynamic> _placePredictions = [];
+  bool _isLocating = false;
+
+  String _autocompleteInputId = 'autocomplete-input';
 
   @override
   void initState() {
@@ -64,14 +76,61 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
     _phoneController = TextEditingController();
     _websiteController = TextEditingController();
     _menuUrlController = TextEditingController();
-    _averagePriceController = TextEditingController();
     _latitudeController = TextEditingController();
     _longitudeController = TextEditingController();
     _tagsController = TextEditingController();
     _mainImageController = TextEditingController();
-
+    _imageUrlControllers = List.generate(3, (_) => TextEditingController());
     // Inicializar horarios por defecto
     _initializeDefaultOpeningHours();
+    _mapController = null;
+    _selectedLatLng = null;
+    _getUserLocation();
+    _searchController.addListener(_onSearchChanged);
+    _searchFocusNode.addListener(() {
+      if (!_searchFocusNode.hasFocus) {
+        setState(() {
+          _placePredictions = [];
+        });
+      }
+    });
+    _autocompleteInputId =
+        'autocomplete-input-${DateTime.now().millisecondsSinceEpoch}';
+    // Registrar el viewType para el widget HTML solo una vez
+    // ignore: undefined_prefixed_name
+    ui.platformViewRegistry.registerViewFactory(
+      _autocompleteInputId,
+      (int viewId) {
+        final input = html.InputElement()
+          ..id = _autocompleteInputId
+          ..placeholder = 'Buscar dirección...'
+          ..style.width = '100%'
+          ..style.height = '40px'
+          ..style.fontSize = '16px';
+        // Inicializar Google Places Autocomplete
+        Future.delayed(const Duration(milliseconds: 100), () {
+          js.context
+              .callMethod('initPlacesAutocomplete', [_autocompleteInputId]);
+        });
+        return input;
+      },
+    );
+    // Escuchar mensajes de selección
+    html.window.onMessage.listen((event) {
+      final data = event.data;
+      if (data is Map && data['type'] == 'places_autocomplete_selected') {
+        final lat = data['lat'];
+        final lng = data['lng'];
+        if (lat != null && lng != null) {
+          final latLng =
+              LatLng((lat as num).toDouble(), (lng as num).toDouble());
+          setState(() {
+            _selectedLatLng = latLng;
+          });
+          _moveCamera(latLng);
+        }
+      }
+    });
   }
 
   void _initializeDefaultOpeningHours() {
@@ -101,57 +160,6 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
     if (!_didLoadData) {
       _didLoadData = true;
       context.read<PlaceFormCubit>().loadFormData(placeId: widget.placeId);
-      // Drag & drop para web
-      // Solo registrar una vez
-      // ignore: undefined_prefixed_name
-      if (identical(0, 0.0)) {
-        html.window.onDrop.listen((event) async {
-          event.preventDefault();
-          if (event.dataTransfer != null &&
-              event.dataTransfer!.files != null &&
-              event.dataTransfer!.files!.isNotEmpty) {
-            final file = event.dataTransfer!.files![0];
-            if (file.type.startsWith('image/')) {
-              final reader = html.FileReader();
-              reader.readAsArrayBuffer(file);
-              await reader.onLoad.first;
-              final bytes = reader.result as Uint8List;
-              // Llama a onAccept del DragTarget manualmente
-              if (mounted) {
-                setState(() {
-                  _isUploadingImage = true;
-                });
-                final fileName =
-                    'places/${DateTime.now().millisecondsSinceEpoch}_${file.name}';
-                try {
-                  final ref = FirebaseStorage.instance.ref().child(fileName);
-                  final uploadTask = await ref.putData(bytes);
-                  final url = await uploadTask.ref.getDownloadURL();
-                  setState(() {
-                    _imageUrls.add(url);
-                    if (_mainImageController.text.isEmpty) {
-                      _mainImageController.text = url;
-                    }
-                  });
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Error al subir imagen: $e'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-                setState(() {
-                  _isUploadingImage = false;
-                });
-              }
-            }
-          }
-        });
-        html.window.onDragOver.listen((event) {
-          event.preventDefault();
-        });
-      }
     }
   }
 
@@ -163,11 +171,15 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
     _phoneController.dispose();
     _websiteController.dispose();
     _menuUrlController.dispose();
-    _averagePriceController.dispose();
     _latitudeController.dispose();
     _longitudeController.dispose();
     _tagsController.dispose();
     _mainImageController.dispose();
+    for (final c in _imageUrlControllers) {
+      c.dispose();
+    }
+    _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -179,14 +191,20 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
       _phoneController.text = place.phone;
       _websiteController.text = place.website;
       _menuUrlController.text = place.menuUrl;
-      _averagePriceController.text = place.averagePrice.toString();
       _latitudeController.text = place.latitude.toString();
       _longitudeController.text = place.longitude.toString();
       _selectedPriceLevel = place.priceLevel;
       _isOpen = place.isOpen;
       _tags = List<String>.from(place.tags);
       _tagsController.text = _tags.join(', ');
-      _imageUrls = List<String>.from(place.imageUrls);
+      // Inicializar los controladores de las 3 imágenes adicionales
+      for (int i = 0; i < 3; i++) {
+        if (place.imageUrls.length > i) {
+          _imageUrlControllers[i].text = place.imageUrls[i];
+        } else {
+          _imageUrlControllers[i].clear();
+        }
+      }
       _mainImageController.text = place.mainImage;
 
       // Cargar horarios si existen
@@ -194,6 +212,12 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
         _openingHours =
             Map<String, Map<String, String>>.from(place.openingHours);
       }
+
+      final lat = place.latitude;
+      final lng = place.longitude;
+
+      _selectedLatLng =
+          LatLng((lat as num).toDouble(), (lng as num).toDouble());
     }
   }
 
@@ -204,7 +228,6 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
     _phoneController.clear();
     _websiteController.clear();
     _menuUrlController.clear();
-    _averagePriceController.clear();
     _latitudeController.clear();
     _longitudeController.clear();
     _tagsController.clear();
@@ -213,8 +236,11 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
     _selectedPriceLevel = 0;
     _isOpen = true;
     _tags = [];
-    _imageUrls = [];
+    for (final c in _imageUrlControllers) {
+      c.clear();
+    }
     _initializeDefaultOpeningHours();
+    _selectedLatLng = null;
   }
 
   @override
@@ -563,47 +589,76 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         _buildSectionTitle('Ubicación'),
-        Row(
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 48,
+          child: HtmlElementView(viewType: _autocompleteInputId),
+        ),
+        const SizedBox(height: 8),
+        Stack(
           children: [
-            Expanded(
-              child: TextFormField(
-                controller: _latitudeController,
-                decoration: const InputDecoration(
-                    labelText: 'Latitud', border: OutlineInputBorder()),
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                validator: (value) {
-                  if (value != null && value.isNotEmpty) {
-                    final lat = double.tryParse(value);
-                    if (lat == null || lat < -90 || lat > 90) {
-                      return 'Latitud debe estar entre -90 y 90';
-                    }
-                  }
-                  return null;
+            SizedBox(
+              height: 320,
+              child: GoogleMap(
+                initialCameraPosition: CameraPosition(
+                  target:
+                      _selectedLatLng ?? const LatLng(19.432608, -99.133209),
+                  zoom: 14,
+                ),
+                onMapCreated: (controller) {
+                  _mapController = controller;
                 },
+                markers: _selectedLatLng != null
+                    ? {
+                        Marker(
+                          markerId: const MarkerId('selected-location'),
+                          position: _selectedLatLng!,
+                        ),
+                      }
+                    : {},
+                onTap: (latLng) {
+                  setState(() {
+                    _selectedLatLng = latLng;
+                  });
+                },
+                myLocationEnabled: true,
+                myLocationButtonEnabled: false,
               ),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: TextFormField(
-                controller: _longitudeController,
-                decoration: const InputDecoration(
-                    labelText: 'Longitud', border: OutlineInputBorder()),
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                validator: (value) {
-                  if (value != null && value.isNotEmpty) {
-                    final lng = double.tryParse(value);
-                    if (lng == null || lng < -180 || lng > 180) {
-                      return 'Longitud debe estar entre -180 y 180';
-                    }
-                  }
-                  return null;
-                },
+            Positioned(
+              top: 16,
+              right: 12,
+              child: FloatingActionButton(
+                mini: true,
+                heroTag: 'center_location',
+                onPressed: _getUserLocation,
+                child: const Icon(Icons.my_location),
+                tooltip: 'Centrar en mi ubicación',
               ),
             ),
+            if (_isLocating)
+              const Positioned(
+                top: 60,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
           ],
         ),
+        const SizedBox(height: 8),
+        if (_selectedLatLng != null)
+          Builder(
+            builder: (context) {
+              final lat = _selectedLatLng?.latitude ?? 0.0;
+              final lng = _selectedLatLng?.longitude ?? 0.0;
+              return Text(
+                  'Latitud: ${lat.toStringAsFixed(6)}, Longitud: ${lng.toStringAsFixed(6)}');
+            },
+          ),
+        if (_selectedLatLng == null)
+          const Text('Haz click en el mapa para seleccionar la ubicación.'),
       ],
     );
   }
@@ -613,27 +668,12 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         _buildSectionTitle('Precios'),
-        TextFormField(
-          controller: _averagePriceController,
-          decoration: const InputDecoration(
-              labelText: 'Precio Promedio (\$)', border: OutlineInputBorder()),
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          validator: (value) {
-            if (value != null && value.isNotEmpty) {
-              final price = double.tryParse(value);
-              if (price == null || price < 0) {
-                return 'El precio debe ser un número positivo';
-              }
-            }
-            return null;
-          },
-        ),
         const SizedBox(height: 16),
         DropdownButtonFormField<int>(
           value: _selectedPriceLevel,
           decoration: const InputDecoration(
               labelText: 'Nivel de Precio', border: OutlineInputBorder()),
-          items: [
+          items: const [
             DropdownMenuItem(value: 0, child: Text('Gratis')),
             DropdownMenuItem(value: 1, child: Text('\$ - Económico')),
             DropdownMenuItem(value: 2, child: Text('\$\$ - Moderado')),
@@ -698,8 +738,6 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         _buildSectionTitle('Imágenes del Lugar'),
-        // Drag & Drop area
-        _buildDragDropArea(context),
         const SizedBox(height: 8),
         TextFormField(
           controller: _mainImageController,
@@ -707,279 +745,49 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
               labelText: 'URL de la Imagen Principal',
               border: OutlineInputBorder(),
               hintText: 'https://...'),
-          onChanged: (value) {
-            setState(() {}); // Para refrescar la preview
-          },
+          onChanged: (_) => setState(() {}),
         ),
-        const SizedBox(height: 8),
         if (_mainImageController.text.isNotEmpty)
-          Center(
-            child: Image.network(
-              _mainImageController.text,
-              height: 120,
-              errorBuilder: (context, error, stackTrace) =>
-                  const Icon(Icons.broken_image, size: 60),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Center(
+              child: Image.network(
+                _mainImageController.text,
+                height: 120,
+                errorBuilder: (context, error, stackTrace) =>
+                    const Icon(Icons.broken_image, size: 60),
+              ),
             ),
           ),
         const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: TextFormField(
-                decoration: const InputDecoration(
-                    labelText: 'Agregar URL de Imagen a la Galería',
-                    border: OutlineInputBorder(),
-                    hintText: 'https://...'),
-                onFieldSubmitted: (value) {
-                  if (value.isNotEmpty && !_imageUrls.contains(value)) {
-                    setState(() {
-                      _imageUrls.add(value);
-                    });
-                  }
-                },
-              ),
+        for (int i = 0; i < 3; i++) ...[
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8.0),
+            child: TextFormField(
+              controller: _imageUrlControllers[i],
+              decoration: InputDecoration(
+                  labelText: 'URL de Imagen Adicional #${i + 1}',
+                  border: const OutlineInputBorder(),
+                  hintText: 'https://...'),
+              onChanged: (_) => setState(() {}),
             ),
-            const SizedBox(width: 8),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.upload_file),
-              label: const Text('Subir imagen'),
-              onPressed: _isUploadingImage
-                  ? null
-                  : () async {
-                      setState(() {
-                        _isUploadingImage = true;
-                      });
-                      try {
-                        final result = await FilePicker.platform.pickFiles(
-                          type: FileType.image,
-                          allowMultiple: false,
-                          withData: true,
-                        );
-                        if (result != null &&
-                            result.files.single.bytes != null) {
-                          final file = result.files.single;
-                          if (file.bytes!.length > maxImageSizeBytes) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                    'La imagen excede el tamaño máximo de 3MB.'),
-                                backgroundColor: Colors.orange,
-                              ),
-                            );
-                            setState(() {
-                              _isUploadingImage = false;
-                            });
-                            return;
-                          }
-                          final fileName =
-                              'places/${DateTime.now().millisecondsSinceEpoch}_${file.name}';
-                          try {
-                            final ref =
-                                FirebaseStorage.instance.ref().child(fileName);
-                            final uploadTask = await ref.putData(file.bytes!);
-                            final url = await uploadTask.ref.getDownloadURL();
-                            setState(() {
-                              _imageUrls.add(url);
-                              // Si no hay imagen principal, la ponemos
-                              if (_mainImageController.text.isEmpty) {
-                                _mainImageController.text = url;
-                              }
-                            });
-                          } catch (e) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Error al subir imagen: $e'),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                          }
-                        }
-                      } catch (e) {
-                        // Error inesperado
-                        debugPrint('Error inesperado en picker: $e');
-                      } finally {
-                        setState(() {
-                          _isUploadingImage = false;
-                        });
-                      }
-                    },
-            ),
-            if (_isUploadingImage) ...[
-              const SizedBox(width: 8),
-              const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            ]
-          ],
-        ),
-        const SizedBox(height: 8),
-        if (_imageUrls.isNotEmpty)
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: _imageUrls
-                .map((url) => Stack(
-                      alignment: Alignment.topRight,
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _mainImageController.text = url;
-                            });
-                          },
-                          child: Container(
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: _mainImageController.text == url
-                                    ? Colors.green
-                                    : Colors.grey,
-                                width: 2,
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Image.network(
-                              url,
-                              width: 80,
-                              height: 80,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  const Icon(Icons.broken_image, size: 40),
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close,
-                              color: Colors.red, size: 18),
-                          onPressed: () async {
-                            final urlToDelete = url;
-                            setState(() {
-                              _imageUrls.remove(urlToDelete);
-                              if (_mainImageController.text == urlToDelete) {
-                                _mainImageController.clear();
-                              }
-                            });
-                            // Solo intentamos borrar si es de nuestro bucket
-                            if (urlToDelete
-                                .contains('firebasestorage.googleapis.com')) {
-                              try {
-                                await _deleteImageFromStorage(urlToDelete);
-                              } catch (e) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                        'No se pudo eliminar la imagen del storage: $e'),
-                                    backgroundColor: Colors.orange,
-                                  ),
-                                );
-                              }
-                            }
-                          },
-                        ),
-                      ],
-                    ))
-                .toList(),
           ),
-        if (_imageUrls.isEmpty) const Text('No hay imágenes en la galería.'),
-        const SizedBox(height: 8),
-        const Text(
-            'Haz click en una imagen para seleccionarla como principal.'),
+          if (_imageUrlControllers[i].text.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: Center(
+                child: Image.network(
+                  _imageUrlControllers[i].text,
+                  height: 100,
+                  errorBuilder: (context, error, stackTrace) =>
+                      const Icon(Icons.broken_image, size: 40),
+                ),
+              ),
+            ),
+        ],
+        const Text('Puedes agregar hasta 3 imágenes adicionales.'),
       ],
     );
-  }
-
-  Widget _buildDragDropArea(BuildContext context) {
-    // Solo funciona en web
-    return Listener(
-      onPointerDown: (_) {},
-      child: DragTarget<Uint8List>(
-        onWillAccept: (data) => true,
-        onAccept: (bytes) async {
-          if (bytes.length > maxImageSizeBytes) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('La imagen excede el tamaño máximo de 3MB.'),
-                backgroundColor: Colors.orange,
-              ),
-            );
-            return;
-          }
-          setState(() {
-            _isUploadingImage = true;
-          });
-          final fileName =
-              'places/${DateTime.now().millisecondsSinceEpoch}_dropped_image.jpg';
-          try {
-            final ref = FirebaseStorage.instance.ref().child(fileName);
-            final uploadTask = await ref.putData(bytes);
-            final url = await uploadTask.ref.getDownloadURL();
-            setState(() {
-              _imageUrls.add(url);
-              if (_mainImageController.text.isEmpty) {
-                _mainImageController.text = url;
-              }
-            });
-          } catch (e) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Error al subir imagen: $e'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-          setState(() {
-            _isUploadingImage = false;
-          });
-        },
-        builder: (context, candidateData, rejectedData) {
-          return GestureDetector(
-            onTap: () {},
-            child: Container(
-              height: 80,
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                border: Border.all(
-                  color: _isUploadingImage ? Colors.green : Colors.grey,
-                  width: 2,
-                ),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              alignment: Alignment.center,
-              child: _isUploadingImage
-                  ? const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                        SizedBox(width: 12),
-                        Text('Subiendo imagen...'),
-                      ],
-                    )
-                  : const Text(
-                      'Arrastra y suelta imágenes aquí para subirlas',
-                      style: TextStyle(color: Colors.black54),
-                    ),
-            ),
-          );
-        },
-        onLeave: (data) {},
-      ),
-    );
-  }
-
-  Future<void> _deleteImageFromStorage(String url) async {
-    try {
-      final storage = FirebaseStorage.instance;
-      final ref = storage.refFromURL(url);
-      await ref.delete();
-    } catch (e) {
-      // Puede fallar si la URL no es de nuestro bucket o ya fue borrada
-      debugPrint('No se pudo eliminar la imagen de storage: $e');
-    }
   }
 
   Widget _buildOpeningHoursSection(BuildContext context, Place? currentPlace) {
@@ -1129,12 +937,23 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
             return;
           }
 
-          // Validar campos numéricos
-          final averagePrice =
-              double.tryParse(_averagePriceController.text) ?? 0.0;
-          final latitude = double.tryParse(_latitudeController.text) ?? 0.0;
-          final longitude = double.tryParse(_longitudeController.text) ?? 0.0;
+          if (_selectedLatLng == null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Por favor selecciona la ubicación en el mapa.'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+            return;
+          }
+          final latitude = _selectedLatLng!.latitude;
+          final longitude = _selectedLatLng!.longitude;
 
+          // Construir la lista de imágenes adicionales
+          final imageUrls = _imageUrlControllers
+              .map((c) => c.text)
+              .where((url) => url.isNotEmpty)
+              .toList();
           // Construct the Place object from form values
           final placeToSave = Place(
             id: widget.placeId ?? currentPlace?.id ?? '',
@@ -1144,7 +963,7 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
             categoryId: _selectedCategory!.id,
             categoryName: _selectedCategory!.name,
             mainImage: _mainImageController.text,
-            imageUrls: _imageUrls,
+            imageUrls: imageUrls,
             latitude: latitude,
             longitude: longitude,
             rating: currentPlace?.rating ?? 0.0,
@@ -1152,19 +971,15 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
             phone: _phoneController.text,
             website: _websiteController.text,
             menuUrl: _menuUrlController.text,
-            averagePrice: averagePrice,
             priceLevel: _selectedPriceLevel,
             tags: _tags,
             openingHours: _openingHours,
             metadata: {
               ...currentPlace?.metadata ?? {},
-              'ownerId': currentAdmin.uid, // Agregar ownerId en metadata
             },
             reviews: currentPlace?.reviews ?? [],
-            schedules: currentPlace?.schedules ?? [],
             offers: currentPlace?.offers ?? [],
-            categoryIcon: currentPlace?.categoryIcon ?? '',
-            ownerIds: currentPlace?.ownerIds ?? [],
+            ownerIds: currentPlace?.ownerIds ?? [currentAdmin.uid],
             createdBy: currentPlace?.createdBy ?? currentAdmin.uid,
             createdAt: currentPlace?.createdAt,
             lastUpdated: DateTime.now(),
@@ -1181,5 +996,88 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
         }
       },
     );
+  }
+
+  Future<void> _getUserLocation() async {
+    setState(() => _isLocating = true);
+    try {
+      // Usar la API de geolocalización del navegador
+      final position = await _getBrowserLocation();
+      if (position != null) {
+        final lat = position['lat'];
+        final lng = position['lng'];
+        if (lat != null && lng != null) {
+          final latLng =
+              LatLng((lat as num).toDouble(), (lng as num).toDouble());
+          setState(() {
+            _selectedLatLng = latLng;
+          });
+          _moveCamera(latLng);
+        }
+      }
+    } catch (e) {
+      // Si falla, no hacer nada (se queda en CDMX por defecto)
+    } finally {
+      setState(() => _isLocating = false);
+    }
+  }
+
+  Future<Map<String, double>?> _getBrowserLocation() async {
+    try {
+      final completer = Completer<Map<String, double>?>();
+      // ignore: undefined_prefixed_name
+      html.window.navigator.geolocation.getCurrentPosition().then((pos) {
+        final lat = pos.coords?.latitude;
+        final lng = pos.coords?.longitude;
+        completer.complete({
+          'lat': lat != null ? lat.toDouble() : 0.0,
+          'lng': lng != null ? lng.toDouble() : 0.0,
+        });
+      }).catchError((_) => completer.complete(null));
+      return await completer.future;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _moveCamera(LatLng latLng) {
+    if (_mapController != null) {
+      _mapController!.animateCamera(CameraUpdate.newLatLng(latLng));
+    }
+  }
+
+  void _onSearchChanged() async {
+    final input = _searchController.text;
+    if (input.length < 3) {
+      setState(() => _placePredictions = []);
+      return;
+    }
+    final url = Uri.parse(
+        'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$input&key=$_googleMapsApiKey&language=es');
+    final response = await http.get(url);
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      setState(() {
+        _placePredictions = data['predictions'] ?? [];
+      });
+    }
+  }
+
+  Future<void> _selectPrediction(dynamic prediction) async {
+    final placeId = prediction['place_id'];
+    final url = Uri.parse(
+        'https://maps.googleapis.com/maps/api/place/details/json?place_id=$placeId&key=$_googleMapsApiKey&language=es');
+    final response = await http.get(url);
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      final location = data['result']['geometry']['location'];
+      final latLng = LatLng(location['lat'], location['lng']);
+      setState(() {
+        _selectedLatLng = latLng;
+        _searchController.text = data['result']['formatted_address'] ?? '';
+        _placePredictions = [];
+      });
+      _moveCamera(latLng);
+    }
   }
 }
