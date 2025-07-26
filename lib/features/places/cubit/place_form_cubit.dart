@@ -94,38 +94,29 @@ class PlaceFormCubit extends Cubit<PlaceFormState> with BaseCubit {
 
       String placeId = place.id;
       if (isNewPlace) {
-        // Generar un ID temporal para el lugar
-        final tempId = DateTime.now().millisecondsSinceEpoch.toString();
-        placeId = tempId;
+        // 1. Crear el lugar y obtener el ID real generado por Firestore
+        // Suponiendo que addPlace devuelve el ID generado
+        placeId = await _placeRepository.addPlace(place);
 
-        // Actualizar ownedPlaceIds del admin con el ID temporal
-        final updatedOwnedPlaceIds = [...currentAdmin.ownedPlaceIds, tempId];
+        // 2. Actualizar ownedPlaceIds del admin con el ID real
+        final updatedOwnedPlaceIds = [...currentAdmin.ownedPlaceIds, placeId];
         await adminAuthCubit.updateOwnedPlaces(updatedOwnedPlaceIds);
 
-        // Crear el lugar con el ID temporal
-        final placeWithId = place.copyWith(id: tempId);
-        final success = await _placeRepository.addPlace(placeWithId);
-        if (!success) {
-          // Si falla, revertir la actualización de ownedPlaceIds
-          await adminAuthCubit.updateOwnedPlaces(currentAdmin.ownedPlaceIds);
-          throw Exception('Error al crear el lugar');
+        // 3. Insertar en place_categories
+        if (place.categoryId.isNotEmpty) {
+          await _placeCategoryRepository.upsertPlaceCategory(
+            PlaceCategory(
+              placeId: placeId,
+              categoryId: place.categoryId,
+              createdAt: DateTime.now(),
+            ),
+          );
         }
       } else {
         final success = await _placeRepository.updatePlace(place);
         if (!success) {
           throw Exception('Error al actualizar el lugar');
         }
-      }
-
-      // Insertar en place_categories
-      if (place.categoryId.isNotEmpty && placeId.isNotEmpty) {
-        await _placeCategoryRepository.upsertPlaceCategory(
-          PlaceCategory(
-            placeId: placeId,
-            categoryId: place.categoryId,
-            createdAt: DateTime.now(),
-          ),
-        );
       }
 
       secureEmit(PlaceFormSuccess(isNewPlace: isNewPlace));
