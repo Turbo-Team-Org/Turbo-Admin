@@ -51,7 +51,22 @@ class DashboardCubit extends Cubit<DashboardState> {
 
       emit(DashboardState.loaded(stats));
     } catch (e) {
-      emit(DashboardState.error('Error cargando estadísticas: $e'));
+      String errorMessage = 'Error cargando estadísticas';
+
+      // Manejar errores específicos de timestamp
+      if (e.toString().contains('Timestamp') ||
+          e.toString().contains('String')) {
+        errorMessage =
+            'Error al procesar fechas de eventos. Por favor, verifica que los datos estén correctamente formateados.';
+      } else if (e.toString().contains('Error al obtener eventos')) {
+        errorMessage = 'Error al cargar eventos desde la base de datos.';
+      } else if (e.toString().contains('Error al obtener lugares')) {
+        errorMessage = 'Error al cargar lugares desde la base de datos.';
+      } else if (e.toString().contains('Error al obtener reseñas')) {
+        errorMessage = 'Error al cargar reseñas desde la base de datos.';
+      }
+
+      emit(DashboardState.error('$errorMessage: $e'));
     }
   }
 
