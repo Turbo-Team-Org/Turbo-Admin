@@ -17,9 +17,12 @@ class AdminPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: body,
+        // Use Positioned.fill to ensure body takes available space without conflicts
+        Positioned.fill(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: body,
+          ),
         ),
         if (floatingActionButton != null)
           Positioned(

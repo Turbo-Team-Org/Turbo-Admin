@@ -359,7 +359,16 @@
       });
     </script>
 
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAVutR13I58yvzsHjV5ZLtS9pHfe4cLsJ8&libraries=places"></script>
+    <script>
+      // Initialize Google Maps API with callback to ensure it's loaded
+      function initGoogleMaps() {
+        // This will be called after the API loads
+        if (window.google && window.google.maps && window.google.maps.places) {
+          console.log('Google Maps Places API loaded');
+        }
+      }
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAVutR13I58yvzsHjV5ZLtS9pHfe4cLsJ8&libraries=places,marker&loading=async&callback=initGoogleMaps"></script>
     <script src="places_autocomplete.js"></script>
   </body>
 </html>

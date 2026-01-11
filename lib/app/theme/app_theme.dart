@@ -127,7 +127,7 @@ class AppTheme {
       ),
 
       // Card con tema de Turbo
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 1,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),

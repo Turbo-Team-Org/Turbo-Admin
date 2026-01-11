@@ -1,5 +1,6 @@
 import 'package:core/core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart'; // For navigation
@@ -8,13 +9,12 @@ import 'package:turbo_admin/features/places/cubit/place_form_cubit.dart';
 import 'package:turbo_admin/features/places/cubit/place_form_state.dart';
 import 'package:turbo_admin/features/auth/cubit/admin_auth_cubit.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'dart:async';
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:html' as html;
 import 'dart:js' as js;
-import 'dart:ui' as ui;
+// Conditional import for platformViewRegistry
+import 'dart:ui_web' as ui_web show platformViewRegistry;
 
 class PlaceFormPage extends StatefulWidget {
   final String? placeId;
@@ -59,10 +59,8 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
   late GoogleMapController? _mapController;
   LatLng? _selectedLatLng;
 
-  final String _googleMapsApiKey = 'AIzaSyAVutR13I58yvzsHjV5ZLtS9pHfe4cLsJ8';
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
-  List<dynamic> _placePredictions = [];
   bool _isLocating = false;
 
   String _autocompleteInputId = 'autocomplete-input';
@@ -86,51 +84,14 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
     _mapController = null;
     _selectedLatLng = null;
     _getUserLocation();
-    _searchController.addListener(_onSearchChanged);
-    _searchFocusNode.addListener(() {
-      if (!_searchFocusNode.hasFocus) {
-        setState(() {
-          _placePredictions = [];
-        });
-      }
-    });
     _autocompleteInputId =
         'autocomplete-input-${DateTime.now().millisecondsSinceEpoch}';
-    // Registrar el viewType para el widget HTML solo una vez
-    // ignore: undefined_prefixed_name
-    ui.platformViewRegistry.registerViewFactory(
-      _autocompleteInputId,
-      (int viewId) {
-        final input = html.InputElement()
-          ..id = _autocompleteInputId
-          ..placeholder = 'Buscar dirección...'
-          ..style.width = '100%'
-          ..style.height = '40px'
-          ..style.fontSize = '16px';
-        // Inicializar Google Places Autocomplete
-        Future.delayed(const Duration(milliseconds: 100), () {
-          js.context
-              .callMethod('initPlacesAutocomplete', [_autocompleteInputId]);
-        });
-        return input;
-      },
-    );
-    // Escuchar mensajes de selección
-    html.window.onMessage.listen((event) {
-      final data = event.data;
-      if (data is Map && data['type'] == 'places_autocomplete_selected') {
-        final lat = data['lat'];
-        final lng = data['lng'];
-        if (lat != null && lng != null) {
-          final latLng =
-              LatLng((lat as num).toDouble(), (lng as num).toDouble());
-          setState(() {
-            _selectedLatLng = latLng;
-          });
-          _moveCamera(latLng);
-        }
-      }
-    });
+
+    // Registrar el viewType para el widget HTML solo en web
+    if (kIsWeb) {
+      _registerPlatformView();
+      _setupMessageListener();
+    }
   }
 
   void _initializeDefaultOpeningHours() {
@@ -150,6 +111,50 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
         'isOpen': 'true',
       };
     }
+  }
+
+  /// Registra la vista de plataforma para el autocomplete de Google Places (solo web)
+  void _registerPlatformView() {
+    if (!kIsWeb) return;
+
+    ui_web.platformViewRegistry.registerViewFactory(
+      _autocompleteInputId,
+      (int viewId) {
+        final input = html.InputElement()
+          ..id = _autocompleteInputId
+          ..placeholder = 'Buscar dirección...'
+          ..style.width = '100%'
+          ..style.height = '40px'
+          ..style.fontSize = '16px';
+        // Inicializar Google Places Autocomplete
+        Future.delayed(const Duration(milliseconds: 100), () {
+          js.context
+              .callMethod('initPlacesAutocomplete', [_autocompleteInputId]);
+        });
+        return input;
+      },
+    );
+  }
+
+  /// Configura el listener para mensajes del autocomplete (solo web)
+  void _setupMessageListener() {
+    if (!kIsWeb) return;
+
+    html.window.onMessage.listen((event) {
+      final data = event.data;
+      if (data is Map && data['type'] == 'places_autocomplete_selected') {
+        final lat = data['lat'];
+        final lng = data['lng'];
+        if (lat != null && lng != null) {
+          final latLng =
+              LatLng((lat as num).toDouble(), (lng as num).toDouble());
+          setState(() {
+            _selectedLatLng = latLng;
+          });
+          _moveCamera(latLng);
+        }
+      }
+    });
   }
 
   @override
@@ -590,10 +595,25 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
       children: <Widget>[
         _buildSectionTitle('Ubicación'),
         const SizedBox(height: 8),
-        SizedBox(
-          height: 48,
-          child: HtmlElementView(viewType: _autocompleteInputId),
-        ),
+        if (kIsWeb)
+          SizedBox(
+            height: 48,
+            child: HtmlElementView(viewType: _autocompleteInputId),
+          )
+        else
+          TextFormField(
+            controller: _addressController,
+            decoration: const InputDecoration(
+              labelText: 'Buscar dirección...',
+              border: OutlineInputBorder(),
+              prefixIcon: Icon(Icons.search),
+            ),
+            readOnly: true,
+            onTap: () {
+              // En plataformas no-web, podrías abrir un diálogo de búsqueda
+              // Por ahora, solo muestra el campo de dirección
+            },
+          ),
         const SizedBox(height: 8),
         Stack(
           children: [
@@ -1033,7 +1053,10 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
           'lat': lat != null ? lat.toDouble() : 0.0,
           'lng': lng != null ? lng.toDouble() : 0.0,
         });
-      }).catchError((_) => completer.complete(null));
+      }).catchError((_) {
+        completer.complete(null);
+        return null;
+      });
       return await completer.future;
     } catch (_) {
       return null;
@@ -1043,41 +1066,6 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
   void _moveCamera(LatLng latLng) {
     if (_mapController != null) {
       _mapController!.animateCamera(CameraUpdate.newLatLng(latLng));
-    }
-  }
-
-  void _onSearchChanged() async {
-    final input = _searchController.text;
-    if (input.length < 3) {
-      setState(() => _placePredictions = []);
-      return;
-    }
-    final url = Uri.parse(
-        'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$input&key=$_googleMapsApiKey&language=es');
-    final response = await http.get(url);
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      setState(() {
-        _placePredictions = data['predictions'] ?? [];
-      });
-    }
-  }
-
-  Future<void> _selectPrediction(dynamic prediction) async {
-    final placeId = prediction['place_id'];
-    final url = Uri.parse(
-        'https://maps.googleapis.com/maps/api/place/details/json?place_id=$placeId&key=$_googleMapsApiKey&language=es');
-    final response = await http.get(url);
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      final location = data['result']['geometry']['location'];
-      final latLng = LatLng(location['lat'], location['lng']);
-      setState(() {
-        _selectedLatLng = latLng;
-        _searchController.text = data['result']['formatted_address'] ?? '';
-        _placePredictions = [];
-      });
-      _moveCamera(latLng);
     }
   }
 }

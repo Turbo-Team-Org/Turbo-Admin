@@ -83,7 +83,7 @@ class TurboLightTheme {
         ),
 
         // Cards con glassmorphism
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           elevation: 0,
           color: Colors.white.withOpacity(0.8),
           shape: RoundedRectangleBorder(
@@ -190,7 +190,7 @@ class TurboDarkTheme {
         ),
 
         // Cards con glassmorphism oscuro
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           elevation: 0,
           color: TurboColors.slate800.withOpacity(0.8),
           shape: RoundedRectangleBorder(

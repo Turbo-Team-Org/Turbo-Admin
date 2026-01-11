@@ -47,8 +47,10 @@ class AdminScaffold extends StatelessWidget {
                 // For this example, let's assume AdminAppBar is for larger screens or part of the main content.
                 if (!isMobile) AdminAppBar(title: title, actions: actions),
 
-                // Body content
-                Expanded(
+                // Body content - Use Flexible with tight fit to take available space
+                // This avoids the Expanded nesting conflict while still filling the space
+                Flexible(
+                  fit: FlexFit.tight,
                   child: body,
                 ),
               ],
