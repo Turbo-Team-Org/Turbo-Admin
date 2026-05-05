@@ -11,14 +11,12 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # PAQUETE PRINCIPAL - contiene toda la lógica
-
+  # Paquete principal de lógica compartida, fijado por ref para CI reproducible.
   core:
-    path: ../Turbo_Core/core
-    # git:
-      # url: git@github.com:Turbo-Team-Org/Turbo_Core.git
-      # ref:  2737f6401aeee7538cd089888f9cc9a2cfdcd8ce
-      # path: core
+    git:
+      url: https://github.com/Turbo-Team-Org/Turbo_Core.git
+      ref: af9b8a684bb80dd90cd8c9b805d7152c83038d41
+      path: core
 
   # Solo para UI y estado
   flutter_bloc: ^8.1.6
