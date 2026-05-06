@@ -1,6 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get_it/get_it.dart';
-import 'package:core/core.dart'; // For User model, UserRepository, UserService
+import 'package:core/core.dart';
 
 // --- Users States ---
 abstract class UsersState {}
@@ -28,6 +27,8 @@ class UsersError extends UsersState {
 
 // --- Users Cubit ---
 class UsersCubit extends Cubit<UsersState> {
+  // Reservado para loadUsers / paginación cuando se descomente el cuerpo del cubit.
+  // ignore: unused_field
   final AuthenticationRepository _userRepository;
 
   UsersCubit({

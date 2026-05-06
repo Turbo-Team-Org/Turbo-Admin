@@ -96,7 +96,7 @@ class PlaceFormCubit extends Cubit<PlaceFormState> with BaseCubit {
       if (isNewPlace) {
         // 1. Crear el lugar y obtener el ID real generado por Firestore
         // Suponiendo que addPlace devuelve el ID generado
-        placeId = await _placeRepository.addPlace(place);
+        placeId = (await _placeRepository.addPlace(place)) as String;
 
         // 2. Actualizar ownedPlaceIds del admin con el ID real
         final updatedOwnedPlaceIds = [...currentAdmin.ownedPlaceIds, placeId];

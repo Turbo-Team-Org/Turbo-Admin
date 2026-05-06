@@ -14,7 +14,7 @@ import 'dart:async';
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:html' as html;
 import 'dart:js' as js;
-import 'dart:ui' as ui;
+import 'dart:ui_web' as ui;
 
 class PlaceFormPage extends StatefulWidget {
   final String? placeId;
@@ -983,6 +983,7 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
             createdBy: currentPlace?.createdBy ?? currentAdmin.uid,
             createdAt: currentPlace?.createdAt,
             lastUpdated: DateTime.now(),
+            averagePrice: 0,
           );
 
           context.read<PlaceFormCubit>().savePlace(placeToSave);

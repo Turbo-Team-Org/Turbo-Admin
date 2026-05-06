@@ -42,8 +42,10 @@ class PlaceholderUsersListPage extends StatelessWidget {
                                       //             .deleteUser(userId);
                                       //         Navigator.pop(context);
                                     },
-                                    child: Text("Eliminar",
-                                        style: TextStyle(color: Colors.red)))
+                                    child: const Text(
+                                        'Eliminar',
+                                        style:
+                                            TextStyle(color: Colors.red)))
                               ],
                             ));
                   },
