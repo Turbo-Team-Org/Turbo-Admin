@@ -43,7 +43,7 @@ class TurboLogo extends StatelessWidget {
     switch (type) {
       case TurboLogoType.svg:
         return SvgPicture.asset(
-          'assets/images/Turbo Marca 7.svg',
+          'assets/images/turbo_marca_7.svg',
           width: width ?? 120,
           height:
               height ?? 88, // Mantiene la proporción del SVG original (375x275)
@@ -95,7 +95,7 @@ class TurboLogoSmall extends StatelessWidget {
   Widget build(BuildContext context) {
     final logoWidget = type == TurboLogoType.svg
         ? SvgPicture.asset(
-            'assets/images/Turbo Marca 1.svg',
+            'assets/images/turbo_marca_1.svg',
             width: useContainer ? size * 0.7 : size,
             height: useContainer ? size * 0.7 : size,
             colorFilter: const ColorFilter.mode(
