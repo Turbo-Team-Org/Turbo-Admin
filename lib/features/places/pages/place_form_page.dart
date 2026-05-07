@@ -8,8 +8,6 @@ import 'package:turbo_admin/features/places/cubit/place_form_cubit.dart';
 import 'package:turbo_admin/features/places/cubit/place_form_state.dart';
 import 'package:turbo_admin/features/auth/cubit/admin_auth_cubit.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'dart:async';
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:html' as html;
@@ -59,10 +57,8 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
   late GoogleMapController? _mapController;
   LatLng? _selectedLatLng;
 
-  final String _googleMapsApiKey = 'AIzaSyAVutR13I58yvzsHjV5ZLtS9pHfe4cLsJ8';
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
-  List<dynamic> _placePredictions = [];
   bool _isLocating = false;
 
   String _autocompleteInputId = 'autocomplete-input';
@@ -86,13 +82,8 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
     _mapController = null;
     _selectedLatLng = null;
     _getUserLocation();
-    _searchController.addListener(_onSearchChanged);
     _searchFocusNode.addListener(() {
-      if (!_searchFocusNode.hasFocus) {
-        setState(() {
-          _placePredictions = [];
-        });
-      }
+      if (!_searchFocusNode.hasFocus) return;
     });
     _autocompleteInputId =
         'autocomplete-input-${DateTime.now().millisecondsSinceEpoch}';
@@ -1034,7 +1025,10 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
           'lat': lat != null ? lat.toDouble() : 0.0,
           'lng': lng != null ? lng.toDouble() : 0.0,
         });
-      }).catchError((_) => completer.complete(null));
+      }).catchError((_) {
+        completer.complete(null);
+        return null;
+      });
       return await completer.future;
     } catch (_) {
       return null;
@@ -1047,38 +1041,4 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
     }
   }
 
-  void _onSearchChanged() async {
-    final input = _searchController.text;
-    if (input.length < 3) {
-      setState(() => _placePredictions = []);
-      return;
-    }
-    final url = Uri.parse(
-        'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$input&key=$_googleMapsApiKey&language=es');
-    final response = await http.get(url);
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      setState(() {
-        _placePredictions = data['predictions'] ?? [];
-      });
-    }
-  }
-
-  Future<void> _selectPrediction(dynamic prediction) async {
-    final placeId = prediction['place_id'];
-    final url = Uri.parse(
-        'https://maps.googleapis.com/maps/api/place/details/json?place_id=$placeId&key=$_googleMapsApiKey&language=es');
-    final response = await http.get(url);
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      final location = data['result']['geometry']['location'];
-      final latLng = LatLng(location['lat'], location['lng']);
-      setState(() {
-        _selectedLatLng = latLng;
-        _searchController.text = data['result']['formatted_address'] ?? '';
-        _placePredictions = [];
-      });
-      _moveCamera(latLng);
-    }
-  }
 }
