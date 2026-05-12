@@ -33,6 +33,8 @@ dependencies:
 
   # GetIt for dependency injection
   get_it: ^8.0.3
+  # Misma línea que Turbo_Core/core: variables leídas por Env en init_config.
+  flutter_dotenv: ^5.2.1
   intl: ^0.20.2
   firebase_core: ^3.13.1
   flutter_svg: ^2.2.0
@@ -60,3 +62,5 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
+    # Copia local (no versionar secretos): ver .env.example en la raíz del Admin.
+    - .env

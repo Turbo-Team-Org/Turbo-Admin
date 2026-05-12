@@ -53,3 +53,6 @@ app.*.map.json
 .fvm/flutter_sdk
 
 /app_config/pre.json
+
+# Secretos / entorno local (crear desde .env.example)
+.env
