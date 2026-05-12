@@ -74,6 +74,7 @@ void _verifyCoreDependencies(GetIt di) {
     'AdminAuthRepository',
     'ReservationRepository',
     'LocationRepository',
+    'AnalyticsRepository',
   ];
 
   for (final dependency in requiredDependencies) {
@@ -102,6 +103,9 @@ void _verifyCoreDependencies(GetIt di) {
           break;
         case 'LocationRepository':
           di<LocationRepository>();
+          break;
+        case 'AnalyticsRepository':
+          di<AnalyticsRepository>();
           break;
       }
       debugPrint('✅ $dependency registrado correctamente');
@@ -228,6 +232,8 @@ void _registerDashboardCubit(GetIt di) {
         eventRepository: di<EventRepository>(),
         reviewRepository: di<ReviewRepository>(),
         categoryRepository: di<CategoryRepository>(),
+        analyticsRepository: di<AnalyticsRepository>(),
+        reservationRepository: di<ReservationRepository>(),
       ));
 
   debugPrint('✅ DashboardCubit registrado');

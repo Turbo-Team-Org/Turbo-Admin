@@ -8,14 +8,19 @@ import 'package:turbo_admin/features/dashboard/presentation/cubit/dashboard_cubi
 import 'package:turbo_admin/features/auth/cubit/admin_auth_cubit.dart';
 
 /// Dashboard condicional para Business Owners según su estado de solicitud
-class BusinessOwnerDashboardPage extends StatelessWidget {
+class BusinessOwnerDashboardPage extends StatefulWidget {
   const BusinessOwnerDashboardPage({super.key});
 
   @override
+  State<BusinessOwnerDashboardPage> createState() =>
+      _BusinessOwnerDashboardPageState();
+}
+
+class _BusinessOwnerDashboardPageState extends State<BusinessOwnerDashboardPage> {
+  @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) =>
-          GetIt.instance<DashboardCubit>()..loadDashboardStats(),
+      create: (context) => GetIt.instance<DashboardCubit>(),
       child: AdminPage(
         body: BlocBuilder<AdminAuthCubit, AdminAuthState>(
           builder: (context, authState) {
@@ -84,45 +89,9 @@ class BusinessOwnerDashboardPage extends StatelessWidget {
 
   Widget _buildApprovedDashboard(
       BuildContext context, BusinessOwnerRequest request) {
-    return BlocBuilder<DashboardCubit, DashboardState>(
-      builder: (context, dashboardState) {
-        return SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Banner verde de aprobación con animación
-              _buildStatusBanner(
-                context,
-                title: '¡Bienvenido a Turbo Admin!',
-                subtitle:
-                    'Tu solicitud ha sido aprobada. Ya puedes gestionar tu negocio',
-                icon: Icons.verified_user,
-                color: Colors.green,
-                backgroundColor: Colors.green.withOpacity(0.1),
-                showCelebration: true,
-              ),
-
-              const SizedBox(height: 24),
-
-              // Información del negocio
-              _buildBusinessInfoCard(context, request),
-
-              const SizedBox(height: 24),
-
-              // Dashboard completo desbloqueado
-              if (dashboardState is DashboardLoaded) ...[
-                _buildStatsGrid(dashboardState.stats),
-                const SizedBox(height: 24),
-                _buildQuickActions(context),
-              ] else if (dashboardState is DashboardLoading) ...[
-                const Center(child: CircularProgressIndicator()),
-              ] else if (dashboardState is DashboardError) ...[
-                _buildErrorState(context, dashboardState.message),
-              ],
-            ],
-          ),
-        );
-      },
+    return _ApprovedOwnerDashboardView(
+      request: request,
+      host: this,
     );
   }
 
@@ -642,6 +611,192 @@ class BusinessOwnerDashboardPage extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildOwnerAnalyticsSection(
+    BuildContext context,
+    DashboardStats stats,
+  ) {
+    final err = stats.ownerAnalyticsError;
+    final dash = stats.ownerPlaceDashboard;
+
+    if (err != null && dash == null) {
+      return Card(
+        elevation: 2,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              const Icon(Icons.warning_amber_outlined, color: Colors.orange),
+              const SizedBox(width: 12),
+              Expanded(child: Text(err)),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (dash == null) {
+      return const SizedBox.shrink();
+    }
+
+    final rangeLabel = dash.dateRange.displayText;
+
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Rendimiento del negocio',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${dash.placeName} · $rangeLabel',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                _buildMiniMetric(
+                  context,
+                  'Vistas',
+                  dash.summary.totalViews.toString(),
+                ),
+                _buildMiniMetric(
+                  context,
+                  'Visitantes únicos',
+                  dash.summary.uniqueVisitors.toString(),
+                ),
+                _buildMiniMetric(
+                  context,
+                  'Reservas (periodo)',
+                  stats.ownerReservationsLast30Days.toString(),
+                ),
+                _buildMiniMetric(
+                  context,
+                  'Rating (lugar)',
+                  dash.summary.averageRating.toStringAsFixed(1),
+                ),
+              ],
+            ),
+            if (dash.kpiMetrics.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Text(
+                'KPIs',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              ...dash.kpiMetrics.map(
+                (m) => ListTile(
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(m.title),
+                  trailing: Text(
+                    m.value.toStringAsFixed(m.unit == 'percentage' ? 1 : 0),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMiniMetric(BuildContext context, String label, String value) {
+    return Chip(
+      label: Text('$label: $value'),
+    );
+  }
+}
+
+class _ApprovedOwnerDashboardView extends StatefulWidget {
+  const _ApprovedOwnerDashboardView({
+    required this.request,
+    required this.host,
+  });
+
+  final BusinessOwnerRequest request;
+  final _BusinessOwnerDashboardPageState host;
+
+  @override
+  State<_ApprovedOwnerDashboardView> createState() =>
+      _ApprovedOwnerDashboardViewState();
+}
+
+class _ApprovedOwnerDashboardViewState extends State<_ApprovedOwnerDashboardView> {
+  var _didRequestLoad = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_didRequestLoad) {
+      _didRequestLoad = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        context.read<DashboardCubit>().loadBusinessOwnerDashboard(
+              widget.request.userId,
+            );
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<DashboardCubit, DashboardState>(
+      builder: (context, dashboardState) {
+        return SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              widget.host._buildStatusBanner(
+                context,
+                title: '¡Bienvenido a Turbo Admin!',
+                subtitle:
+                    'Tu solicitud ha sido aprobada. Ya puedes gestionar tu negocio',
+                icon: Icons.verified_user,
+                color: Colors.green,
+                backgroundColor: Colors.green.withOpacity(0.1),
+                showCelebration: true,
+              ),
+              const SizedBox(height: 24),
+              widget.host._buildBusinessInfoCard(
+                context,
+                widget.request,
+              ),
+              const SizedBox(height: 24),
+              if (dashboardState is DashboardLoaded) ...[
+                widget.host._buildStatsGrid(dashboardState.stats),
+                const SizedBox(height: 16),
+                widget.host._buildOwnerAnalyticsSection(
+                  context,
+                  dashboardState.stats,
+                ),
+                const SizedBox(height: 24),
+                widget.host._buildQuickActions(context),
+              ] else if (dashboardState is DashboardLoading) ...[
+                const Center(child: CircularProgressIndicator()),
+              ] else if (dashboardState is DashboardError) ...[
+                widget.host._buildErrorState(
+                  context,
+                  dashboardState.message,
+                ),
+              ],
+            ],
+          ),
+        );
+      },
     );
   }
 }

@@ -933,7 +933,6 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
             createdBy: currentPlace?.createdBy ?? currentAdmin.uid,
             createdAt: currentPlace?.createdAt,
             lastUpdated: DateTime.now(),
-            averagePrice: 0,
           );
 
           context.read<PlaceFormCubit>().savePlace(placeToSave);
