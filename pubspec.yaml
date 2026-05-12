@@ -11,10 +11,12 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # Paquete Core: path local en monorepo (Turbo_Workspace). Para CI solo-git,
-  # sustituir por dependencia git apuntando al mismo ref que el resto del equipo.
+  # Paquete Core: mismo ref que Turbo_App (rama feat/supabase-migration hasta merge a develop).
   core:
-    path: ../Turbo_Core/core
+    git:
+      url: https://github.com/Turbo-Team-Org/Turbo_Core.git
+      ref: a9d864127e74a440a5de3131da38532212a05cce
+      path: core
 
   # Solo para UI y estado
   flutter_bloc: ^8.1.6
