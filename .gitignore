@@ -23,10 +23,10 @@ migrate_working_dir/
 # is commented out by default.
 #.vscode/
 
-# VS Code specific files
-.vscode/launch.json
-.vscode/tasks.json
-.vscode/settings.json
+# VS Code: ignorar lo local salvo settings/extensions compartidos (FVM).
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
 
 # Flutter/Dart/Pub related
 **/doc/api/
@@ -49,8 +49,9 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# FVM
-.fvm/flutter_sdk
+# FVM: no versionar el SDK local; sí la versión fijada del equipo.
+.fvm/*
+!.fvm/fvm_config.json
 
 /app_config/pre.json
 

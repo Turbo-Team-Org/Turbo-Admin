@@ -5,7 +5,7 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: ">=3.2.0 <4.0.0" # Adjusted to a more typical range, Flutter 3.29.0 is not a valid Dart SDK range. Let's assume current stable Flutter.
+  sdk: ">=3.7.0 <4.0.0" # Alineado con Turbo_Core y Flutter stable vía FVM.
 
 dependencies:
   flutter:
