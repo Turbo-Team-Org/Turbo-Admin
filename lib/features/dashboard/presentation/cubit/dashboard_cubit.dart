@@ -6,30 +6,32 @@ part 'dashboard_state.dart';
 part 'dashboard_cubit.freezed.dart';
 
 class DashboardCubit extends Cubit<DashboardState> {
-  final PlaceRepository placeRepository;
-  final EventRepository eventRepository;
-  final ReviewRepository reviewRepository;
-  final CategoryRepository categoryRepository;
-
   DashboardCubit({
     required this.placeRepository,
     required this.eventRepository,
     required this.reviewRepository,
     required this.categoryRepository,
+    required this.analyticsRepository,
+    required this.reservationRepository,
   }) : super(const DashboardState.initial());
 
-  /// Cargar estadísticas del dashboard
+  final PlaceRepository placeRepository;
+  final EventRepository eventRepository;
+  final ReviewRepository reviewRepository;
+  final CategoryRepository categoryRepository;
+  final AnalyticsRepository analyticsRepository;
+  final ReservationRepository reservationRepository;
+
+  /// Estadísticas agregadas (super admin / vista global).
   Future<void> loadDashboardStats() async {
     emit(const DashboardState.loading());
 
     try {
-      // Obtener datos básicos de los repositorios del core
       final places = await placeRepository.getPlaces();
       final events = await eventRepository.getEvents();
       final reviews = await reviewRepository.getReviews();
       final categories = await categoryRepository.getAllCategories();
 
-      // Crear estadísticas del dashboard
       final stats = DashboardStats(
         totalPlaces: places.length,
         activePlaces: places.where((p) => p.isOpen).length,
@@ -53,7 +55,6 @@ class DashboardCubit extends Cubit<DashboardState> {
     } catch (e) {
       String errorMessage = 'Error cargando estadísticas';
 
-      // Manejar errores específicos de timestamp
       if (e.toString().contains('Timestamp') ||
           e.toString().contains('String')) {
         errorMessage =
@@ -70,6 +71,70 @@ class DashboardCubit extends Cubit<DashboardState> {
     }
   }
 
+  /// Dashboard de negocio: primer lugar del owner + analytics Core (S2-T4).
+  Future<void> loadBusinessOwnerDashboard(String ownerUserId) async {
+    emit(const DashboardState.loading());
+
+    try {
+      final places = await placeRepository.getPlacesByOwnerId(ownerUserId);
+      final events = await eventRepository.getEvents();
+      final reviews = await reviewRepository.getReviews();
+      final categories = await categoryRepository.getAllCategories();
+
+      final range = DateRange.last30Days();
+      BusinessDashboard? ownerDashboard;
+      var ownerReservations = 0;
+      String? ownerAnalyticsError;
+
+      if (places.isEmpty) {
+        ownerAnalyticsError =
+            'No hay lugares asociados a tu cuenta. Cuando exista un negocio con owner_ids, verás KPIs aquí.';
+      } else {
+        final placeId = places.first.id;
+        try {
+          ownerDashboard =
+              await analyticsRepository.getDashboardData(placeId, range);
+          final reservations =
+              await reservationRepository.getReservationsBetweenDates(
+            placeId,
+            range.startDate,
+            range.endDate,
+          );
+          ownerReservations = reservations.length;
+        } catch (e) {
+          ownerAnalyticsError =
+              'No se pudieron cargar las métricas de analytics: $e';
+        }
+      }
+
+      final stats = DashboardStats(
+        totalPlaces: places.length,
+        activePlaces: places.where((p) => p.isOpen).length,
+        pendingPlaces: places.where((p) => !p.isOpen).length,
+        totalEvents: events.length,
+        upcomingEvents:
+            events.where((e) => e.date.isAfter(DateTime.now())).length,
+        totalReviews: reviews.length,
+        pendingReviews:
+            reviews.where((r) => r.status == ReviewStatus.pending).length,
+        approvedReviews:
+            reviews.where((r) => r.status == ReviewStatus.approved).length,
+        totalCategories: categories.length,
+        averageRating: _calculateAverageRating(reviews),
+        placesByCategory: _getPlacesByCategory(places, categories),
+        eventsByMonth: _getEventsByMonth(events),
+        lastUpdated: DateTime.now(),
+        ownerPlaceDashboard: ownerDashboard,
+        ownerReservationsLast30Days: ownerReservations,
+        ownerAnalyticsError: ownerAnalyticsError,
+      );
+
+      emit(DashboardState.loaded(stats));
+    } catch (e) {
+      emit(DashboardState.error('Error cargando dashboard de negocio: $e'));
+    }
+  }
+
   /// Refrescar estadísticas
   Future<void> refreshStats() async {
     if (state is DashboardLoaded) {
@@ -78,7 +143,6 @@ class DashboardCubit extends Cubit<DashboardState> {
     await loadDashboardStats();
   }
 
-  /// Calcular rating promedio
   double _calculateAverageRating(List<Review> reviews) {
     if (reviews.isEmpty) return 0.0;
 
@@ -92,9 +156,10 @@ class DashboardCubit extends Cubit<DashboardState> {
     return totalRating / approvedReviews.length;
   }
 
-  /// Obtener distribución de lugares por categoría
   Map<String, int> _getPlacesByCategory(
-      List<Place> places, List<Category> categories) {
+    List<Place> places,
+    List<Category> categories,
+  ) {
     final result = <String, int>{};
 
     for (final category in categories) {
@@ -107,12 +172,10 @@ class DashboardCubit extends Cubit<DashboardState> {
     return result;
   }
 
-  /// Obtener eventos por mes (últimos 6 meses)
   Map<String, int> _getEventsByMonth(List<Event> events) {
     final result = <String, int>{};
     final now = DateTime.now();
 
-    // Inicializar últimos 6 meses
     for (int i = 0; i < 6; i++) {
       final monthDate = DateTime(now.year, now.month - i, 1);
       final monthKey =
@@ -120,7 +183,6 @@ class DashboardCubit extends Cubit<DashboardState> {
       result[monthKey] = 0;
     }
 
-    // Contar eventos por mes usando la fecha del evento
     for (final event in events) {
       final monthKey =
           '${event.date.year}-${event.date.month.toString().padLeft(2, '0')}';
@@ -132,7 +194,6 @@ class DashboardCubit extends Cubit<DashboardState> {
     return result;
   }
 
-  /// Obtener valor específico de métrica
   int? getMetricValue(String metricId) {
     if (state is DashboardLoaded) {
       final stats = (state as DashboardLoaded).stats;
@@ -162,7 +223,6 @@ class DashboardCubit extends Cubit<DashboardState> {
     return null;
   }
 
-  /// Obtener porcentaje de cambio para una métrica (mock por ahora)
   double getChangePercentage(String metricId) {
     switch (metricId) {
       case 'total_places':
@@ -178,29 +238,14 @@ class DashboardCubit extends Cubit<DashboardState> {
     }
   }
 
-  /// Verificar si el cambio es positivo
   bool isPositiveChange(String metricId) {
     final change = getChangePercentage(metricId);
     return change >= 0;
   }
 }
 
-/// Clase simplificada para estadísticas del dashboard
+/// Estadísticas del dashboard (global + opcional analytics por negocio).
 class DashboardStats {
-  final int totalPlaces;
-  final int activePlaces;
-  final int pendingPlaces;
-  final int totalEvents;
-  final int upcomingEvents;
-  final int totalReviews;
-  final int pendingReviews;
-  final int approvedReviews;
-  final int totalCategories;
-  final double averageRating;
-  final Map<String, int> placesByCategory;
-  final Map<String, int> eventsByMonth;
-  final DateTime lastUpdated;
-
   const DashboardStats({
     required this.totalPlaces,
     required this.activePlaces,
@@ -215,5 +260,25 @@ class DashboardStats {
     required this.placesByCategory,
     required this.eventsByMonth,
     required this.lastUpdated,
+    this.ownerPlaceDashboard,
+    this.ownerReservationsLast30Days = 0,
+    this.ownerAnalyticsError,
   });
+
+  final int totalPlaces;
+  final int activePlaces;
+  final int pendingPlaces;
+  final int totalEvents;
+  final int upcomingEvents;
+  final int totalReviews;
+  final int pendingReviews;
+  final int approvedReviews;
+  final int totalCategories;
+  final double averageRating;
+  final Map<String, int> placesByCategory;
+  final Map<String, int> eventsByMonth;
+  final DateTime lastUpdated;
+  final BusinessDashboard? ownerPlaceDashboard;
+  final int ownerReservationsLast30Days;
+  final String? ownerAnalyticsError;
 }

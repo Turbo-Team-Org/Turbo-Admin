@@ -1,18 +1,16 @@
+import 'dart:async';
+
 import 'package:core/core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
-import 'package:go_router/go_router.dart'; // For navigation
+import 'package:go_router/go_router.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:turbo_admin/core/widgets/admin_page.dart';
+import 'package:turbo_admin/features/auth/cubit/admin_auth_cubit.dart';
 import 'package:turbo_admin/features/places/cubit/place_form_cubit.dart';
 import 'package:turbo_admin/features/places/cubit/place_form_state.dart';
-import 'package:turbo_admin/features/auth/cubit/admin_auth_cubit.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'dart:async';
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
-import 'dart:js' as js;
-import 'dart:ui_web' as ui;
+import 'package:turbo_admin/features/places/widgets/address_autocomplete_field.dart';
 
 class PlaceFormPage extends StatefulWidget {
   final String? placeId;
@@ -25,7 +23,6 @@ class PlaceFormPage extends StatefulWidget {
 class _PlaceFormPageState extends State<PlaceFormPage> {
   final _formKey = GlobalKey<FormState>();
 
-  // TextEditingControllers for form fields
   late TextEditingController _nameController;
   late TextEditingController _descriptionController;
   late TextEditingController _addressController;
@@ -36,32 +33,29 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
   late TextEditingController _longitudeController;
   late TextEditingController _tagsController;
   late TextEditingController _mainImageController;
+  late TextEditingController _autocompleteController;
 
   Category? _selectedCategory;
   int _selectedPriceLevel = 0;
   bool _isOpen = true;
 
-  // Horarios de apertura
   Map<String, Map<String, String>> _openingHours = {};
 
-  // Etiquetas
   List<String> _tags = [];
 
-  // Add this flag to the state class
   bool _didLoadData = false;
 
-  // Hasta 3 URLs de imágenes adicionales
   List<TextEditingController> _imageUrlControllers =
       List.generate(3, (_) => TextEditingController());
 
-  late GoogleMapController? _mapController;
+  GoogleMapController? _mapController;
   LatLng? _selectedLatLng;
 
-  final TextEditingController _searchController = TextEditingController();
-  final FocusNode _searchFocusNode = FocusNode();
   bool _isLocating = false;
 
-  String _autocompleteInputId = 'autocomplete-input';
+  /// Última dirección aplicada al `_addressController` por una selección de
+  /// sugerencia, para evitar sobreescribir mientras el usuario edita.
+  String? _lastAppliedSelectedAddress;
 
   @override
   void initState() {
@@ -76,51 +70,13 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
     _longitudeController = TextEditingController();
     _tagsController = TextEditingController();
     _mainImageController = TextEditingController();
+    _autocompleteController = TextEditingController();
     _imageUrlControllers = List.generate(3, (_) => TextEditingController());
-    // Inicializar horarios por defecto
     _initializeDefaultOpeningHours();
     _mapController = null;
     _selectedLatLng = null;
-    _getUserLocation();
-    _searchFocusNode.addListener(() {
-      if (!_searchFocusNode.hasFocus) return;
-    });
-    _autocompleteInputId =
-        'autocomplete-input-${DateTime.now().millisecondsSinceEpoch}';
-    // Registrar el viewType para el widget HTML solo una vez
-    // ignore: undefined_prefixed_name
-    ui.platformViewRegistry.registerViewFactory(
-      _autocompleteInputId,
-      (int viewId) {
-        final input = html.InputElement()
-          ..id = _autocompleteInputId
-          ..placeholder = 'Buscar dirección...'
-          ..style.width = '100%'
-          ..style.height = '40px'
-          ..style.fontSize = '16px';
-        // Inicializar Google Places Autocomplete
-        Future.delayed(const Duration(milliseconds: 100), () {
-          js.context
-              .callMethod('initPlacesAutocomplete', [_autocompleteInputId]);
-        });
-        return input;
-      },
-    );
-    // Escuchar mensajes de selección
-    html.window.onMessage.listen((event) {
-      final data = event.data;
-      if (data is Map && data['type'] == 'places_autocomplete_selected') {
-        final lat = data['lat'];
-        final lng = data['lng'];
-        if (lat != null && lng != null) {
-          final latLng =
-              LatLng((lat as num).toDouble(), (lng as num).toDouble());
-          setState(() {
-            _selectedLatLng = latLng;
-          });
-          _moveCamera(latLng);
-        }
-      }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_getUserLocation());
     });
   }
 
@@ -166,11 +122,10 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
     _longitudeController.dispose();
     _tagsController.dispose();
     _mainImageController.dispose();
+    _autocompleteController.dispose();
     for (final c in _imageUrlControllers) {
       c.dispose();
     }
-    _searchController.dispose();
-    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -188,7 +143,6 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
       _isOpen = place.isOpen;
       _tags = List<String>.from(place.tags);
       _tagsController.text = _tags.join(', ');
-      // Inicializar los controladores de las 3 imágenes adicionales
       for (int i = 0; i < 3; i++) {
         if (place.imageUrls.length > i) {
           _imageUrlControllers[i].text = place.imageUrls[i];
@@ -198,7 +152,6 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
       }
       _mainImageController.text = place.mainImage;
 
-      // Cargar horarios si existen
       if (place.openingHours.isNotEmpty) {
         _openingHours =
             Map<String, Map<String, String>>.from(place.openingHours);
@@ -223,6 +176,7 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
     _longitudeController.clear();
     _tagsController.clear();
     _mainImageController.clear();
+    _autocompleteController.clear();
     _selectedCategory = null;
     _selectedPriceLevel = 0;
     _isOpen = true;
@@ -232,78 +186,83 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
     }
     _initializeDefaultOpeningHours();
     _selectedLatLng = null;
+    _lastAppliedSelectedAddress = null;
+  }
+
+  void _applyLoadedState(PlaceFormLoaded state) {
+    if (widget.placeId == null && state.place == null) {
+      _clearControllers();
+    } else {
+      _initializeControllers(state.place);
+      if (state.place?.categoryId != null && state.categories.isNotEmpty) {
+        try {
+          _selectedCategory = state.categories
+              .firstWhere((cat) => cat.id == state.place!.categoryId);
+        } catch (_) {
+          _selectedCategory = null;
+        }
+      }
+    }
+
+    if (state.selectedAddress != null &&
+        state.selectedAddress != _lastAppliedSelectedAddress) {
+      _addressController.text = state.selectedAddress!;
+      _lastAppliedSelectedAddress = state.selectedAddress;
+    }
+
+    if (state.selectedLatitude != null && state.selectedLongitude != null) {
+      final lat = state.selectedLatitude!;
+      final lng = state.selectedLongitude!;
+      _latitudeController.text = lat.toStringAsFixed(6);
+      _longitudeController.text = lng.toStringAsFixed(6);
+      final latLng = LatLng(lat, lng);
+      _selectedLatLng = latLng;
+      _moveCamera(latLng);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return AdminPage(
-      //  title: widget.placeId == null ? 'Crear Lugar' : 'Editar Lugar',
       body: BlocListener<PlaceFormCubit, PlaceFormState>(
+        listenWhen: (prev, curr) => prev.runtimeType != curr.runtimeType ||
+            (curr is PlaceFormLoaded),
         listener: (context, state) {
           debugPrint(
               '🔄 PlaceFormPage: Estado cambiado a: ${state.runtimeType}');
 
           if (state is PlaceFormSuccess) {
-            debugPrint(
-                '✅ PlaceFormPage: Lugar guardado exitosamente, navegando de vuelta');
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                   content: Text('Lugar guardado exitosamente'),
                   backgroundColor: Colors.green),
             );
 
-            // Limpiar el estado del cubit antes de navegar
             final cubit = context.read<PlaceFormCubit>();
             cubit.clearState();
 
-            // Navigate back to places list or details page
             if (context.canPop()) {
-              context.pop(true); // Indica que SÍ hubo cambios
+              context.pop(true);
             } else {
-              context.go('/places'); // Fallback route
+              context.go('/places');
             }
           } else if (state is PlaceFormError) {
-            debugPrint('❌ PlaceFormPage: Error en estado: ${state.message}');
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                   content: Text('Error: ${state.message}'),
                   backgroundColor: Colors.red),
             );
           } else if (state is PlaceFormLoaded) {
-            debugPrint(
-                '✅ PlaceFormPage: Datos cargados - Lugar: ${state.place?.name ?? 'Nuevo'}, Categorías: ${state.categories.length}');
-            if (widget.placeId == null && state.place == null) {
-              // Creating new
-              _clearControllers(); // Clear fields for new entry
-            } else {
-              // Editing existing or loaded existing
-              _initializeControllers(state.place);
-              // Ensure _selectedCategory is set if editing and categories are loaded
-              if (state.place?.categoryId != null &&
-                  state.categories.isNotEmpty) {
-                try {
-                  _selectedCategory = state.categories
-                      .firstWhere((cat) => cat.id == state.place!.categoryId);
-                } catch (e) {
-                  // Category might not be in the list, handle appropriately
-                  _selectedCategory = null;
-                }
-              }
-            }
+            _applyLoadedState(state);
           }
         },
         child: BlocBuilder<PlaceFormCubit, PlaceFormState>(
           builder: (context, state) {
-            debugPrint(
-                '🔄 PlaceFormPage: Builder llamado con estado: ${state.runtimeType}');
-
             if (state is PlaceFormLoading || state is PlaceFormInitial) {
               return const Center(child: CircularProgressIndicator());
             }
 
             if (state is PlaceFormLoaded) {
-              debugPrint(
-                  '✅ PlaceFormPage: Renderizando formulario con datos cargados');
               return SingleChildScrollView(
                 padding: const EdgeInsets.all(24.0),
                 child: Form(
@@ -311,7 +270,6 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      // Nueva fila de encabezado con flecha y título
                       Row(
                         children: [
                           IconButton(
@@ -319,8 +277,7 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
                             tooltip: 'Atrás',
                             onPressed: () {
                               if (context.canPop()) {
-                                context
-                                    .pop(false); // Indica que NO hubo cambios
+                                context.pop(false);
                               } else {
                                 context.go('/places');
                               }
@@ -346,7 +303,7 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
                       const SizedBox(height: 24),
                       _buildContactSection(context, state.place),
                       const SizedBox(height: 24),
-                      _buildLocationSection(context, state.place),
+                      _buildLocationSection(context, state),
                       const SizedBox(height: 24),
                       _buildPricingSection(context, state.place),
                       const SizedBox(height: 24),
@@ -378,7 +335,6 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
             }
 
             if (state is PlaceFormSuccess) {
-              debugPrint('✅ PlaceFormPage: Renderizando estado de éxito');
               return const Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -408,8 +364,6 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
             }
 
             if (state is PlaceFormError) {
-              debugPrint(
-                  '❌ PlaceFormPage: Renderizando estado de error: ${state.message}');
               return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -445,8 +399,6 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
               );
             }
 
-            debugPrint(
-                '⚠️ PlaceFormPage: Estado no manejado: ${state.runtimeType}');
             return const Center(
                 child: Text('Algo salió mal. Por favor, intenta de nuevo.'));
           },
@@ -503,7 +455,6 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
 
   Widget _buildCategorySection(
       BuildContext context, List<Category> categories, Place? currentPlace) {
-    // This ensures that _selectedCategory is updated if categories load after the place data or vice-versa
     if (_selectedCategory == null &&
         currentPlace?.categoryId != null &&
         categories.isNotEmpty) {
@@ -511,7 +462,7 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
         _selectedCategory =
             categories.firstWhere((cat) => cat.id == currentPlace!.categoryId);
       } catch (e) {
-        _selectedCategory = null; // Category not found
+        _selectedCategory = null;
       }
     }
 
@@ -575,15 +526,22 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
     );
   }
 
-  Widget _buildLocationSection(BuildContext context, Place? currentPlace) {
+  Widget _buildLocationSection(BuildContext context, PlaceFormLoaded state) {
+    final cubit = context.read<PlaceFormCubit>();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         _buildSectionTitle('Ubicación'),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 48,
-          child: HtmlElementView(viewType: _autocompleteInputId),
+        AddressAutocompleteField(
+          controller: _autocompleteController,
+          suggestions: state.autocompleteSuggestions,
+          isLoading: state.isAutocompleteLoading,
+          errorMessage: state.autocompleteError,
+          onChanged: cubit.onAddressInputChanged,
+          onSuggestionSelected: (selected) {
+            _autocompleteController.text = selected.formattedAddress;
+            cubit.onAddressSuggestionSelected(selected);
+          },
         ),
         const SizedBox(height: 8),
         Stack(
@@ -610,6 +568,10 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
                 onTap: (latLng) {
                   setState(() {
                     _selectedLatLng = latLng;
+                    _latitudeController.text =
+                        latLng.latitude.toStringAsFixed(6);
+                    _longitudeController.text =
+                        latLng.longitude.toStringAsFixed(6);
                   });
                 },
                 myLocationEnabled: true,
@@ -623,8 +585,8 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
                 mini: true,
                 heroTag: 'center_location',
                 onPressed: _getUserLocation,
-                child: const Icon(Icons.my_location),
                 tooltip: 'Centrar en mi ubicación',
+                child: const Icon(Icons.my_location),
               ),
             ),
             if (_isLocating)
@@ -914,7 +876,6 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
         if (_formKey.currentState!.validate()) {
           _formKey.currentState!.save();
 
-          // Obtener el admin actual
           final adminAuthCubit = GetIt.instance<AdminAuthCubit>();
           final currentAdmin = adminAuthCubit.currentAdminUser;
 
@@ -940,12 +901,10 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
           final latitude = _selectedLatLng!.latitude;
           final longitude = _selectedLatLng!.longitude;
 
-          // Construir la lista de imágenes adicionales
           final imageUrls = _imageUrlControllers
               .map((c) => c.text)
               .where((url) => url.isNotEmpty)
               .toList();
-          // Construct the Place object from form values
           final placeToSave = Place(
             id: widget.placeId ?? currentPlace?.id ?? '',
             name: _nameController.text,
@@ -974,7 +933,6 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
             createdBy: currentPlace?.createdBy ?? currentAdmin.uid,
             createdAt: currentPlace?.createdAt,
             lastUpdated: DateTime.now(),
-            averagePrice: 0,
           );
 
           context.read<PlaceFormCubit>().savePlace(placeToSave);
@@ -991,47 +949,24 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
   }
 
   Future<void> _getUserLocation() async {
+    if (!mounted) return;
     setState(() => _isLocating = true);
     try {
-      // Usar la API de geolocalización del navegador
-      final position = await _getBrowserLocation();
-      if (position != null) {
-        final lat = position['lat'];
-        final lng = position['lng'];
-        if (lat != null && lng != null) {
-          final latLng =
-              LatLng((lat as num).toDouble(), (lng as num).toDouble());
-          setState(() {
-            _selectedLatLng = latLng;
-          });
-          _moveCamera(latLng);
-        }
-      }
-    } catch (e) {
-      // Si falla, no hacer nada (se queda en CDMX por defecto)
-    } finally {
-      setState(() => _isLocating = false);
-    }
-  }
-
-  Future<Map<String, double>?> _getBrowserLocation() async {
-    try {
-      final completer = Completer<Map<String, double>?>();
-      // ignore: undefined_prefixed_name
-      html.window.navigator.geolocation.getCurrentPosition().then((pos) {
-        final lat = pos.coords?.latitude;
-        final lng = pos.coords?.longitude;
-        completer.complete({
-          'lat': lat != null ? lat.toDouble() : 0.0,
-          'lng': lng != null ? lng.toDouble() : 0.0,
-        });
-      }).catchError((_) {
-        completer.complete(null);
-        return null;
+      final location = await context.read<PlaceFormCubit>().getUserLocation();
+      if (!mounted || location == null) return;
+      final latLng = LatLng(location.latitude, location.longitude);
+      setState(() {
+        _selectedLatLng = latLng;
+        _latitudeController.text = location.latitude.toStringAsFixed(6);
+        _longitudeController.text = location.longitude.toStringAsFixed(6);
       });
-      return await completer.future;
+      _moveCamera(latLng);
     } catch (_) {
-      return null;
+      // Si falla la geolocalización, mantenemos la posición por defecto.
+    } finally {
+      if (mounted) {
+        setState(() => _isLocating = false);
+      }
     }
   }
 
@@ -1040,5 +975,4 @@ class _PlaceFormPageState extends State<PlaceFormPage> {
       _mapController!.animateCamera(CameraUpdate.newLatLng(latLng));
     }
   }
-
 }

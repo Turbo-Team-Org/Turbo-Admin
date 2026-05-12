@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get_it/get_it.dart';
 // Assuming 'core' is the name of your turbo_core package
 // and it has an init.dart or similar for initialization.
@@ -15,6 +16,16 @@ final getIt = GetIt.instance;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  try {
+    await dotenv.load(fileName: '.env');
+    debugPrint('✅ Variables de entorno cargadas (.env)');
+  } catch (e) {
+    debugPrint(
+      '⚠️ No se pudo cargar .env: $e. '
+      'Copia `.env.example` a `.env` en la raíz del Admin.',
+    );
+  }
 
   try {
     debugPrint('🔥 Inicializando Firebase...');

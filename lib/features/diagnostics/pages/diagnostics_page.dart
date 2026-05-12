@@ -3,7 +3,7 @@ import 'package:get_it/get_it.dart';
 import 'package:core/core.dart';
 import 'package:turbo_admin/core/firebase/firebase_factory.dart';
 import 'package:turbo_admin/core/widgets/system_diagnostics_widget.dart';
-import 'package:turbo_admin/features/dashboard/cubit/dashboard_cubit.dart';
+import 'package:turbo_admin/features/dashboard/presentation/cubit/dashboard_cubit.dart';
 import 'package:turbo_admin/features/places/cubit/places_cubit.dart';
 import 'package:turbo_admin/features/events/cubit/events_cubit.dart';
 import 'package:turbo_admin/features/reviews/cubit/reviews_cubit.dart';
