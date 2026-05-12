@@ -11,11 +11,11 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # Paquete Core: mismo ref que Turbo_App (rama feat/supabase-migration hasta merge a develop).
+  # Paquete Core: mismo ref que Turbo_App (tip feat/supabase-migration, merge con develop).
   core:
     git:
       url: https://github.com/Turbo-Team-Org/Turbo_Core.git
-      ref: a9d864127e74a440a5de3131da38532212a05cce
+      ref: c0219c392850253a6cdf43abde5a00c11dcbc299
       path: core
 
   # Solo para UI y estado
