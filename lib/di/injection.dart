@@ -73,6 +73,7 @@ void _verifyCoreDependencies(GetIt di) {
     'AuthenticationRepository',
     'AdminAuthRepository',
     'ReservationRepository',
+    'LocationRepository',
   ];
 
   for (final dependency in requiredDependencies) {
@@ -98,6 +99,9 @@ void _verifyCoreDependencies(GetIt di) {
           break;
         case 'ReservationRepository':
           di<ReservationRepository>();
+          break;
+        case 'LocationRepository':
+          di<LocationRepository>();
           break;
       }
       debugPrint('✅ $dependency registrado correctamente');
@@ -130,6 +134,7 @@ void _registerUICubits(GetIt di) {
         placeRepository: di<PlaceRepository>(),
         categoryRepository: di<CategoryRepository>(),
         placeCategoryRepository: di<PlaceCategoryRepositoryInterface>(),
+        locationRepository: di<LocationRepository>(),
       ));
   debugPrint('✅ PlaceFormCubit registrado');
 

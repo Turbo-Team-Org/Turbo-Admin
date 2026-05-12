@@ -36,14 +36,23 @@ dependencies:
   flutter_svg: ^2.2.0
   google_maps_flutter: ^2.12.3
 
+  # Estados inmutables con copyWith generado (sealed classes).
+  # Versión alineada con Turbo_Core/core/pubspec.yaml.
+  freezed_annotation: ^3.0.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
   build_runner: ^2.4.7
   auto_route_generator: ^9.0.0 # Corresponding to auto_route
+  freezed: ^3.0.3
 
   flutter_lints: ^4.0.0
+
+  # Testing: mocking + bloc test helpers (compatibles con flutter_bloc 8.x)
+  mocktail: ^1.0.4
+  bloc_test: ^9.1.7
 
 flutter:
   uses-material-design: true

@@ -1,36 +1,37 @@
 import 'package:core/core.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-/// Base state class for Place Form feature
-abstract class PlaceFormState {}
+part 'place_form_state.freezed.dart';
 
-/// Initial state when the form is first loaded
-class PlaceFormInitial extends PlaceFormState {}
+/// Estado del formulario de creación/edición de lugares.
+///
+/// Modelado como `sealed` para forzar `switch` exhaustivo en la UI y como
+/// `freezed` para tener `copyWith` con soporte real de `null` sin sentinels
+/// manuales. Las claves del autocompletado (sugerencias, loading, error y
+/// selección consolidada) viven dentro de [PlaceFormLoaded] para mantener la
+/// transición de estados localizada y permitir reusar el form mientras el
+/// usuario navega entre tipear y seleccionar.
+@freezed
+sealed class PlaceFormState with _$PlaceFormState {
+  const factory PlaceFormState.initial() = PlaceFormInitial;
 
-/// Loading state while fetching form data
-class PlaceFormLoading extends PlaceFormState {}
+  const factory PlaceFormState.loading() = PlaceFormLoading;
 
-/// State when form data is loaded and ready for editing
-class PlaceFormLoaded extends PlaceFormState {
-  final Place? place; // null for create, Place for edit
-  final List<Category> categories;
+  const factory PlaceFormState.loaded({
+    required List<Category> categories,
+    Place? place,
+    @Default(<GooglePlace>[]) List<GooglePlace> autocompleteSuggestions,
+    @Default(false) bool isAutocompleteLoading,
+    String? autocompleteError,
+    String? selectedAddress,
+    double? selectedLatitude,
+    double? selectedLongitude,
+  }) = PlaceFormLoaded;
 
-  PlaceFormLoaded({
-    this.place,
-    required this.categories,
-  });
-}
+  const factory PlaceFormState.saving() = PlaceFormSaving;
 
-/// State while saving the form
-class PlaceFormSaving extends PlaceFormState {}
+  const factory PlaceFormState.success({required bool isNewPlace}) =
+      PlaceFormSuccess;
 
-/// State when form is successfully saved
-class PlaceFormSuccess extends PlaceFormState {
-  final bool isNewPlace;
-  PlaceFormSuccess({required this.isNewPlace});
-}
-
-/// Error state when something goes wrong
-class PlaceFormError extends PlaceFormState {
-  final String message;
-  PlaceFormError(this.message);
+  const factory PlaceFormState.error(String message) = PlaceFormError;
 }

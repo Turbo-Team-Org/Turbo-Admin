@@ -6,7 +6,6 @@ import 'package:turbo_admin/features/auth/cubit/admin_auth_cubit.dart';
 import 'package:turbo_admin/core/widgets/admin_scaffold.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:turbo_admin/features/places/cubit/place_form_cubit.dart';
-import 'package:core/core.dart';
 import 'package:turbo_admin/features/categories/pages/categories_page.dart';
 import 'package:turbo_admin/features/categories/pages/category_form_page.dart';
 import 'package:turbo_admin/features/users/pages/users_page.dart';
@@ -301,17 +300,11 @@ class AppRouter {
                 path: 'new',
                 name: 'newPlace',
                 pageBuilder: (context, state) {
-                  final di = GetIt.instance;
                   return _buildPageWithScaleTransition(
                     context,
                     state,
-                    BlocProvider(
-                      create: (context) => PlaceFormCubit(
-                        placeRepository: di<PlaceRepository>(),
-                        categoryRepository: di<CategoryRepository>(),
-                        placeCategoryRepository:
-                            di<PlaceCategoryRepositoryInterface>(),
-                      ),
+                    BlocProvider<PlaceFormCubit>.value(
+                      value: GetIt.instance<PlaceFormCubit>()..clearState(),
                       child: const PlaceFormPage(),
                     ),
                   );
@@ -322,17 +315,11 @@ class AppRouter {
                 name: 'editPlace',
                 pageBuilder: (context, state) {
                   final placeId = state.pathParameters['placeId'];
-                  final di = GetIt.instance;
                   return _buildPageWithScaleTransition(
                     context,
                     state,
-                    BlocProvider(
-                      create: (context) => PlaceFormCubit(
-                        placeRepository: di<PlaceRepository>(),
-                        categoryRepository: di<CategoryRepository>(),
-                        placeCategoryRepository:
-                            di<PlaceCategoryRepositoryInterface>(),
-                      ),
+                    BlocProvider<PlaceFormCubit>.value(
+                      value: GetIt.instance<PlaceFormCubit>()..clearState(),
                       child: PlaceFormPage(placeId: placeId),
                     ),
                   );
